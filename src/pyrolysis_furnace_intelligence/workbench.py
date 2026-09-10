@@ -64,9 +64,18 @@ def rebalance_composition(previous,changed,new_value,locked=()):
             out[k]=remaining/len(adjustable)
     for k in locked:
         out[k]=old[k]
-    # remove floating drift on the last adjustable component
+    # Remove floating-point residue without changing the intended closure rule.
+    for k in out:
+        if abs(out[k])<1e-12:
+            out[k]=0.0
     drift=1.0-sum(out.values())
-    out[adjustable[-1]]+=drift
+    receiver=max(adjustable,key=lambda k:out[k]) if adjustable else changed
+    out[receiver]+=drift
+    for k in out:
+        if out[k]<-1e-12:
+            raise ValueError('Composition rebalance produced a negative fraction')
+        if out[k]<0:
+            out[k]=0.0
     return out
 
 def draft_teaching_model(draft_pa,reference_draft_pa=-40.0,baseline_excess_air=0.15):

@@ -6,9 +6,14 @@ FORMULAS={'H2':(0,2,0,0),'CH4':(1,4,0,0),'C2H6':(2,6,0,0),'N2':(0,0,0,2)}
 def composition_check(x):
     if not x or set(x)-set(FORMULAS):
         raise ValueError('Unsupported or missing composition')
-    if any(number(v)<0 for v in x.values()) or abs(sum(x.values())-1)>1e-9:
+    clean={k:(0.0 if abs(number(v))<1e-12 else float(v)) for k,v in x.items()}
+    if any(v<-1e-12 for v in clean.values()) or abs(sum(clean.values())-1)>1e-9:
         raise ValueError('Complete fractions must sum to one')
-    return dict(x)
+    drift=1.0-sum(clean.values())
+    if abs(drift)>0:
+        receiver=max(clean,key=clean.get)
+        clean[receiver]+=drift
+    return clean
 
 def mixture_properties(composition,case='interactive'):
     p=parameters()
