@@ -10,6 +10,34 @@ An educational simulator for industrial pyrolysis-furnace combustion, thermal pe
 
 **Navigate:** [Model](#engineering-model) · [Fuel](#combustion-and-fuel-comparison) · [Control](#firing-control-architecture) · [Scenarios](#scenario-laboratory) · [AI](#bounded-ai-engineering-supervisor) · [Validation](#validation) · [Boundaries](#model-boundaries) · [Run](#installation)
 
+## Interactive simulator — the actual product
+
+This repository is **not meant to be only a README or a set of charts**. The main deliverable is the Streamlit engineering sandbox in `app/app.py`.
+
+Run it locally:
+
+```bash
+python -m pip install ".[test]"
+python -m streamlit run app/app.py
+```
+
+On the **Overview** page you can change the teaching inputs live and immediately see the calculated response:
+
+- chemical duty
+- H₂ / CH₄ / C₂H₆ / N₂ fuel composition
+- excess-air fraction
+- radiant and convection heat-accounting shares
+- inlet/outlet firing ratio
+- outlet bottom/sidewall firing ratio
+- six-zone firing correction
+- feed rate and steam/feed ratio
+- low- or high-fuel-pressure control authority
+- furnace draft as an observed input
+
+The app recalculates fuel demand, stoichiometric and actual air, wet/dry O₂, static heat accounting, six-zone firing duty, outlet firing split, steam demand and functional control authority. Unsupported relationships remain explicitly unavailable rather than being invented.
+
+The static figures below are documentation snapshots of selected teaching cases. **They are not the product; the interactive app is.**
+
 ## Why this project exists
 
 Furnace operation is a constrained engineering problem: required process duty, stable combustion, balanced heat distribution and bounded equipment operation must be maintained while avoiding unnecessary firing. Burner loading, excess air, draft, process severity, tube constraints and controller interactions all matter.
