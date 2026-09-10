@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 [project]
 name = "pyrolysis-furnace-intelligence"
-version = "0.2.0"
+version = "1.0.0"
 description = "Educational combustion accounting and bounded functional furnace scenarios"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
