@@ -101,10 +101,10 @@ def test_zone_sensitivity_is_not_pid_claim():
 @pytest.mark.parametrize('component',COMPONENTS)
 def test_custom_mixture_properties(component):
     comp={k:0 for k in COMPONENTS};comp[component]=1
+    p=mixture_properties(comp)
     if component=='N2':
-        with pytest.raises(ValueError):mixture_properties(comp)
+        assert p['lhv'].value==0
     else:
-        p=mixture_properties(comp)
         assert p['lhv'].value>0
 
 @pytest.mark.parametrize('key',['duty_mw','H2','CH4','C2H6','N2','excess_air','draft_pa','heat_recovery','radiant_share','inlet_outlet_ratio','bottom_side_ratio','feed_kg_s','steam_ratio','zone','zone_correction','pressure_state'])
