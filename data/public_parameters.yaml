@@ -1,0 +1,238 @@
+thermal:
+  fired:
+    value: 60000000
+    units: W
+    case: teaching
+    public_provenance: SYNTHETIC
+    engineering_basis: Deliberately selected educational input; not operating data.
+    notes: ''
+  radiant:
+    value: 27000000
+    units: W
+    case: teaching
+    public_provenance: SYNTHETIC
+    engineering_basis: Deliberately selected educational input; not operating data.
+    notes: ''
+  convection:
+    value: 28000000
+    units: W
+    case: teaching
+    public_provenance: SYNTHETIC
+    engineering_basis: Deliberately selected educational input; not operating data.
+    notes: ''
+process:
+  feed:
+    value: 8
+    units: kg/s
+    case: teaching
+    public_provenance: SYNTHETIC
+    engineering_basis: Deliberately selected educational input; not operating data.
+    notes: ''
+  steam_ratio:
+    value: 0.35
+    units: kg/kg
+    case: teaching
+    public_provenance: SYNTHETIC
+    engineering_basis: Deliberately selected educational input; not operating data.
+    notes: ''
+  target:
+    value: 1080
+    units: K
+    case: teaching
+    public_provenance: SYNTHETIC
+    engineering_basis: Deliberately selected educational input; not operating data.
+    notes: ''
+  draft:
+    value: -40
+    units: Pa(g)
+    case: teaching
+    public_provenance: SYNTHETIC
+    engineering_basis: Deliberately selected educational input; not operating data.
+    notes: ''
+distribution:
+  inlet_outlet_ratio:
+    value: 1.5
+    units: '1'
+    case: teaching
+    public_provenance: SYNTHETIC
+    engineering_basis: Deliberately selected educational input; not operating data.
+    notes: ''
+  bottom_side_ratio:
+    value: 1
+    units: '1'
+    case: teaching
+    public_provenance: SYNTHETIC
+    engineering_basis: Deliberately selected educational input; not operating data.
+    notes: ''
+  zone_shares:
+    value:
+    - 0.16666666666666666
+    - 0.16666666666666666
+    - 0.16666666666666666
+    - 0.16666666666666666
+    - 0.16666666666666666
+    - 0.16666666666666666
+    units: '1'
+    case: teaching
+    public_provenance: SYNTHETIC
+    engineering_basis: Deliberately selected educational input; not operating data.
+    notes: ''
+  bottom_burners:
+    value: 30
+    units: '1'
+    case: teaching
+    public_provenance: SYNTHETIC
+    engineering_basis: Deliberately selected educational input; not operating data.
+    notes: ''
+  sidewall_burners:
+    value: 20
+    units: '1'
+    case: teaching
+    public_provenance: SYNTHETIC
+    engineering_basis: Deliberately selected educational input; not operating data.
+    notes: ''
+chemistry:
+  air_n2_o2:
+    value: 3.76
+    units: mol/mol
+    case: ideal_dry_air
+    public_provenance: ASSUMPTION
+    engineering_basis: Dry air represented as O2 plus N2; humidity and argon omitted.
+    notes: ''
+  excess_air:
+    value: 0.15
+    units: '1'
+    case: teaching
+    public_provenance: SYNTHETIC
+    engineering_basis: Deliberately selected educational input; not operating data.
+    notes: ''
+  gas_constant:
+    value: 8.314462618
+    units: J/(mol K)
+    case: ideal_gas
+    public_provenance: REFERENCE
+    engineering_basis: General gas constant, rounded numerical representation.
+    notes: ''
+  normal_temperature:
+    value: 273.15
+    units: K
+    case: declared_normal
+    public_provenance: ASSUMPTION
+    engineering_basis: Explicit ideal-gas normal volume convention.
+    notes: ''
+  normal_pressure:
+    value: 100000
+    units: Pa(a)
+    case: declared_normal
+    public_provenance: ASSUMPTION
+    engineering_basis: Explicit ideal-gas normal volume convention.
+    notes: ''
+species:
+  H2:
+    molar_mass:
+      value: 0.002
+      units: kg/mol
+      case: rounded_property
+      public_provenance: REFERENCE
+      engineering_basis: Rounded molecular mass for teaching arithmetic.
+      notes: ''
+    lhv:
+      value: 120000000.0
+      units: J/kg
+      case: rounded_property
+      public_provenance: REFERENCE
+      engineering_basis: Rounded mass lower heating value; water remains vapour. Not
+        an uncertainty-qualified property source.
+      notes: ''
+  CH4:
+    molar_mass:
+      value: 0.016
+      units: kg/mol
+      case: rounded_property
+      public_provenance: REFERENCE
+      engineering_basis: Rounded molecular mass for teaching arithmetic.
+      notes: ''
+    lhv:
+      value: 50000000.0
+      units: J/kg
+      case: rounded_property
+      public_provenance: REFERENCE
+      engineering_basis: Rounded mass lower heating value; water remains vapour. Not
+        an uncertainty-qualified property source.
+      notes: ''
+  C2H6:
+    molar_mass:
+      value: 0.03
+      units: kg/mol
+      case: rounded_property
+      public_provenance: REFERENCE
+      engineering_basis: Rounded molecular mass for teaching arithmetic.
+      notes: ''
+    lhv:
+      value: 47000000.0
+      units: J/kg
+      case: rounded_property
+      public_provenance: REFERENCE
+      engineering_basis: Rounded mass lower heating value; water remains vapour. Not
+        an uncertainty-qualified property source.
+      notes: ''
+  N2:
+    molar_mass:
+      value: 0.028
+      units: kg/mol
+      case: rounded_property
+      public_provenance: REFERENCE
+      engineering_basis: Rounded molecular mass for teaching arithmetic.
+      notes: ''
+    lhv:
+      value: 0
+      units: J/kg
+      case: rounded_property
+      public_provenance: REFERENCE
+      engineering_basis: Rounded mass lower heating value; water remains vapour. Not
+        an uncertainty-qualified property source.
+      notes: ''
+  O2:
+    molar_mass:
+      value: 0.032
+      units: kg/mol
+      case: rounded_property
+      public_provenance: REFERENCE
+      engineering_basis: Rounded molecular mass for teaching arithmetic.
+      notes: ''
+    lhv:
+      value: 0
+      units: J/kg
+      case: rounded_property
+      public_provenance: REFERENCE
+      engineering_basis: Rounded mass lower heating value; water remains vapour. Not
+        an uncertainty-qualified property source.
+      notes: ''
+fuels:
+  baseline:
+    value:
+      CH4: 0.8
+      H2: 0.2
+    units: mol/mol
+    case: baseline
+    public_provenance: SYNTHETIC
+    engineering_basis: Complete declared teaching composition; not a fuel supply specification.
+    notes: ''
+  high_mass_lhv:
+    value:
+      CH4: 0.2
+      H2: 0.8
+    units: mol/mol
+    case: high_mass_lhv
+    public_provenance: SYNTHETIC
+    engineering_basis: Complete declared teaching composition; not a fuel supply specification.
+    notes: ''
+  lower_mass_lhv:
+    value:
+      CH4: 0.5
+      C2H6: 0.5
+    units: mol/mol
+    case: lower_mass_lhv
+    public_provenance: SYNTHETIC
+    engineering_basis: Complete declared teaching composition; not a fuel supply specification.
+    notes: ''

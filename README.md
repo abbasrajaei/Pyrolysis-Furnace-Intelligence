@@ -48,11 +48,11 @@ $$Q_{fired}=\dot m_f LHV_m\quad\Rightarrow\quad\dot m_f=Q_{fired}/LHV_m$$
 
 For the **synthetic baseline mixture**, 60 MW divided by approximately 52.12 MJ/kg gives **1.151 kg/s** equivalent fuel demand. This is fixed chemical-duty arithmetic, not measured flow or predicted heat transfer.
 
-![Public teaching fuels at equal chemical duty](assets/fuel_comparison.png)
+![Public teaching fuels at equal chemical duty](assets/fuel_comparison.svg)
 
 ## Thermal performance
 
-![Synthetic 60 MW heat accounting](assets/heat_balance.png)
+![Synthetic 60 MW heat accounting](assets/heat_balance.svg)
 
 The teaching balance is **60 MW input = 27 MW radiant + 28 MW convection + 5 MW residual**, giving 91.67% reference accounting efficiency. Residual heat is not separately identified as wall or stack loss. Control events do not recalculate radiant absorption or outlet temperature.
 
@@ -62,7 +62,7 @@ The teaching balance is **60 MW input = 27 MW radiant + 28 MW convection + 5 MW 
 
 Normal demand authority can be superseded by an explicit pressure-constraint event. No plant-specific pressure threshold or valve position is introduced.
 
-![Normal versus pressure-constraint authority](assets/control_authority_example.png)
+![Normal versus pressure-constraint authority](assets/control_authority_example.svg)
 
 Physical distribution is distinct from controller request:
 
@@ -70,7 +70,7 @@ $$\sum_{i=A}^{F} f_i=1,\qquad Q_{fired}=\sum_i Q_i+Q_{outlet,bottom}+Q_{outlet,s
 
 Initially all shares are 1/6. An explicit teaching correction adds 0.03 to Zone C and subtracts 0.006 from each other zone. Total inlet firing remains **36 MW**. A temperature error alone never generates that correction.
 
-![Conserved six-zone redistribution](assets/zone_redistribution.png)
+![Conserved six-zone redistribution](assets/zone_redistribution.svg)
 
 ## Scenario laboratory
 
@@ -88,7 +88,7 @@ The [thirteen scenarios](docs/scenarios.md) are static events, not a time-integr
 
 ## Bounded AI Engineering Supervisor
 
-![Public engineering reasoning path](assets/scenario_reasoning.png)
+![Public engineering reasoning path](assets/scenario_reasoning.svg)
 
 Verified engineering state → sanitized grounding pack → optional provider → structured assessment → validator → accepted catalogue result or deterministic fallback.
 
@@ -122,7 +122,7 @@ These are public software/equation checks, not plant validation. [Validation sco
 
 Overview · Thermal performance · Fuel comparison · Firing distribution · Control architecture · Scenario Lab · AI Engineering Supervisor · Model boundaries.
 
-The figures above are model-generated portfolio figures, **not screenshots**. Browser screenshot tooling was unavailable; application execution was checked with Streamlit AppTest and HTTP startup checks.
+The figures above are publication-safe model-derived SVG portfolio figures, **not screenshots**. Browser screenshot tooling was unavailable; application execution was checked with Streamlit AppTest and HTTP startup checks.
 
 ## Repository structure
 

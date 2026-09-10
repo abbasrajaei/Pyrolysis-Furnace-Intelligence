@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "pyrolysis-furnace-intelligence"
+version = "0.2.0"
+description = "Educational combustion accounting and bounded functional furnace scenarios"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+dependencies = ["PyYAML>=6,<7", "streamlit>=1.40,<2"]
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+figures = ["matplotlib>=3.8,<4"]
+[project.scripts]
+pyrolysis-demo = "pyrolysis_furnace_intelligence.cli:main"
+[tool.setuptools.packages.find]
+where = ["src"]
+[tool.setuptools.package-data]
+pyrolysis_furnace_intelligence = ["resources/*.yaml"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]

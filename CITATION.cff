@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "Please cite this educational software when reusing its methods or teaching examples."
+title: "Pyrolysis Furnace Intelligence"
+type: software
+authors:
+  - family-names: Rajaei
+    given-names: Abbas
+version: 0.2.0
+license: MIT
+abstract: "Declared combustion calculations, static furnace heat accounting, conserved firing allocation and bounded functional scenarios."

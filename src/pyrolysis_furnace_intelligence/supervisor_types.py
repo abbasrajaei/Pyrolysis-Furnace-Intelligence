@@ -1,0 +1,3 @@
+from typing import Protocol
+class SupervisorProvider(Protocol):
+    def assess(self,pack:dict)->dict:...
