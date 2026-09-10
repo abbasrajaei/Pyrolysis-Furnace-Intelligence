@@ -1,30 +1,47 @@
 # Model boundaries
 
-This model explains a generic industrial ethane pyrolysis furnace through declared teaching inputs. Numerical examples are synthetic or rounded general property references. They do not reproduce an operating facility.
+Pyrolysis Furnace Intelligence is an independently authored educational engineering workbench. Numerical operating cases are synthetic or use rounded general property references; they do not reproduce an operating facility.
 
 ## Supported
 
-- Source-inspired static heat accounting using independently selected public duties.
-- Complete combustion stoichiometry for explicitly declared H2, CH4, C2H6 and inert N2 compositions.
-- Ideal dry-air demand and wet/dry product oxygen fractions.
-- Fuel mass-LHV, declared-normal-volume LHV and lower-Wobbe comparisons.
-- Conservation of total firing across six inlet zones and outlet bottom/sidewall branches.
-- An illustrative hierarchical temperature rank selector.
-- Simplified control topology, demand/measurement separation and authority constraints.
-- Static event scenarios, deterministic explanations and a bounded supervisor interface.
+- Complete combustion stoichiometry for declared H2, CH4, C2H6 and inert N2 mixtures.
+- Automatic fuel-composition closure by proportional renormalization of unlocked components.
+- Mass LHV, ideal declared-normal-volume LHV and lower-Wobbe teaching calculations.
+- Stoichiometric/actual dry-air demand and wet/dry ideal product oxygen fractions.
+- Static conserved heat accounting using chemical input, useful heat recovery and radiant/convection partition.
+- Conservation of total firing across six illustrative inlet zones and outlet bottom/sidewall branches.
+- Synthetic per-burner loading arithmetic under explicit equal-loading assumptions.
+- Steam base-demand calculation from feed and steam/feed ratio.
+- Simplified functional pressure-constraint authority states.
+- One-factor sensitivity sweeps for supported input/output relationships.
+- A fixed-resistance draft teaching correlation in which relative airflow scales with the square root of draft magnitude.
+- Thirteen static teaching scenarios, baseline/current case comparison and deterministic context-sensitive engineering guidance.
+- Bounded supervisor architecture that cannot change engineering state or issue operating commands.
 
 ## Not claimed
 
-CFD; local flame shape or temperature; rigorous cracking kinetics; quantitative coking kinetics; tube-life prediction; current tube-metal temperature prediction; plant-calibrated dynamics; identified PID tuning; calibrated valve response; calibrated draft-airflow relations; plant safety assessment; APC or burner-management replacement; plant-validated AI optimization.
+CFD; local flame shape or flame temperature; flame-speed prediction; flashback limits; CO or NOx prediction; rigorous cracking yields; quantitative coking kinetics; tube-life prediction; current tube-metal temperature; local heat-flux prediction; plant-calibrated dynamics; identified PID tuning; calibrated valve response; calibrated fan curve; burner-register position; plant leakage-air coefficients; plant trip/permissive logic; safe-to-continue assessment; APC/BMS replacement; plant-validated optimization; autonomous AI control.
 
-The selected temperature is a skin-control proxy built from synthetic measurements. It is not a measured bulk outlet temperature. The thermal page is reference accounting; it does not recalculate heat absorption after a demand event. Calculated lower Wobbe relies on an explicitly ideal normal-state convention and supplies no burner interchangeability approval.
+The dashboard's sensitivity curves are one-factor engineering studies, not time trends. The current point and baseline show where the selected case lies on a supported relationship; they do not imply a transient trajectory.
 
-## Authority and shutdown
+## Draft correlation
 
-NORMAL, PARTIAL_SHUTDOWN_TEACHING and TOTAL_SHUTDOWN_TEACHING are educational state labels. Shutdown teaching states withhold firing allocation. They do not simulate a particular installed protection system, isolation sequence, forced controller outputs, steam ramp, permissive or reset procedure. A state label cannot establish safe continued operation or successful isolation. Simultaneous pressure constraints and undefined manual/override arbitration return UNAVAILABLE.
+The optional draft sensitivity uses a deliberately simple fixed-effective-resistance relation:
 
-## Numerical limits
+\[
+Q_{air,rel}=\sqrt{\frac{|P_{draft}|}{|P_{draft,ref}|}}
+\]
 
-UNAVAILABLE is represented by a null value and an explicit reason. Missing values are never treated as zero. Conservation and atom-balance checks verify the implemented accounting; they do not validate plant behavior. No uncertainty bounds or plant performance accuracy are inferred from test success.
+and an implied excess-air fraction derived from the selected current excess-air basis. This is a **MODEL / ASSUMPTION** for teaching sensitivity only. Real furnace air admission also depends on burner/register position, density, duct and burner resistance, leakage paths and fan operating point. Therefore the curve is not a plant airflow calibration and is not used to claim a safe or optimal draft.
 
-The public supervisor accepts only a closed catalogue with unchanged engine engineering evidence. Its deterministic demonstration is not a language model. A provider may be supplied through the Python interface, but no live external provider is configured or evaluated here. The assistant cannot change the engine or issue operating commands.
+## Heat-transfer boundary
+
+The thermal workbench uses a static accounting partition. Changing chemical duty, heat recovery or radiant share does not calculate a new COT, tube-metal temperature, local radiant flux, stack temperature or cracking conversion. Those require additional physical relationships or calibrated data.
+
+## Control boundary
+
+Pressure states alter functional authority only. They do not predict valve position, controller output, trip action or recovery time. Zone temperature logic may produce a directional request, but the numerical zone-correction control in the workbench is an explicit user-supplied teaching redistribution; it is not a PID-generated response.
+
+## AI and guidance boundary
+
+The persistent Engineering Guidance panel is deterministic. It explains calculated consequences, qualitative physical implications, variables to watch and unavailable relationships. Qualitative statements do not become numerical predictions. The bounded supervisor accepts only a closed catalogue with unchanged engine evidence; its deterministic demonstration is not a language model.

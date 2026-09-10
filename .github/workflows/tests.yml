@@ -16,3 +16,4 @@ jobs:
       - run: python examples/all_scenarios.py
       - run: python examples/fuel_comparison.py
       - run: pyrolysis-demo --scenario zone_temperature
+      - run: python -c "from app.app import app, server; assert app.layout is not None; assert server.test_client().get('/').status_code == 200"

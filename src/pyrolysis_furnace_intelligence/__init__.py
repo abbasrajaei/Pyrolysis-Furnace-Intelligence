@@ -1,2 +1,2 @@
-"""Public educational furnace model. All cases are declared teaching cases."""
-__version__ = "1.0.0"
+"""Public educational furnace model and interactive engineering workbench."""
+__version__ = "2.0.0"

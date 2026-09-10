@@ -1,198 +1,204 @@
 # Pyrolysis Furnace Intelligence
 
-### Physics-Informed Combustion, Firing-Control and Engineering-Reasoning Simulator
+## Furnace Engineering Workbench
 
-An educational simulator for industrial pyrolysis-furnace combustion, thermal performance, firing distribution, control architecture and bounded AI-assisted engineering reasoning.
+**Interactive combustion, thermal-performance, firing-distribution and control-scenario analysis for a synthetic industrial pyrolysis furnace.**
 
-**Combustion physics + thermal accounting + firing control + scenario analysis + bounded engineering reasoning**
+Pyrolysis Furnace Intelligence 2.0 is built as an engineering workbench rather than a static dashboard. A user starts from a baseline or preset operating case, changes one or more furnace inputs, and immediately sees the calculated consequences, sensitivity curves, baseline deviation and context-sensitive engineering guidance.
 
-<img src="assets/furnace.svg" alt="Conceptual industrial pyrolysis furnace, not to scale: process passes, six zones, fuel and flue-gas paths" width="900">
+The public model is independently authored and uses synthetic teaching conditions. It is not a plant digital twin, operating tool, safety system or APC/BMS replacement.
 
-**Navigate:** [Model](#engineering-model) · [Fuel](#combustion-and-fuel-comparison) · [Control](#firing-control-architecture) · [Scenarios](#scenario-laboratory) · [AI](#bounded-ai-engineering-supervisor) · [Validation](#validation) · [Boundaries](#model-boundaries) · [Run](#installation)
+## What makes the workbench useful
 
-## Interactive simulator — the actual product
+The interface is organized around the way an engineer investigates a furnace problem:
 
-This repository is **not meant to be only a README or a set of charts**. The main deliverable is the Streamlit engineering sandbox in `app/app.py`.
+**baseline → change → consequence → sensitivity → guidance → compare**
 
-Run it locally:
+The user can:
 
-```bash
-python -m pip install ".[test]"
-python -m streamlit run app/app.py
-```
+- load ready-made cases such as hydrogen-rich fuel, high load, reduced load, low/high excess air, zone redistribution, fuel-pressure constraint and strong induced draft;
+- change fuel composition without manually forcing mole fractions back to 100% — unlocked components automatically renormalize;
+- lock fuel components that should remain fixed while another component is changed;
+- vary chemical duty, excess air, draft, heat recovery, radiant share, firing splits, feed, steam/feed ratio and zone correction;
+- inspect current values against a retained baseline;
+- sweep supported input/output relationships and see the full sensitivity curve plus the current and baseline points;
+- save study cases and compare them side-by-side;
+- read a persistent **Engineering Guidance** panel explaining what changed, why it matters, what else is affected, what to watch and which conclusions are only qualitative.
 
-On the **Overview** page you can change the teaching inputs live and immediately see the calculated response:
+## Workbench screens
 
-- chemical duty
-- H₂ / CH₄ / C₂H₆ / N₂ fuel composition
-- excess-air fraction
-- radiant and convection heat-accounting shares
-- inlet/outlet firing ratio
-- outlet bottom/sidewall firing ratio
-- six-zone firing correction
-- feed rate and steam/feed ratio
-- low- or high-fuel-pressure control authority
-- furnace draft as an observed input
-
-The app recalculates fuel demand, stoichiometric and actual air, wet/dry O₂, static heat accounting, six-zone firing duty, outlet firing split, steam demand and functional control authority. Unsupported relationships remain explicitly unavailable rather than being invented.
-
-The static figures below are documentation snapshots of selected teaching cases. **They are not the product; the interactive app is.**
-
-## Why this project exists
-
-Furnace operation is a constrained engineering problem: required process duty, stable combustion, balanced heat distribution and bounded equipment operation must be maintained while avoiding unnecessary firing. Burner loading, excess air, draft, process severity, tube constraints and controller interactions all matter.
-
-This project makes those relationships inspectable. It does **not** calculate the true optimum plant state. Declared teaching inputs, explicit assumptions and unavailable results distinguish what can be calculated from what remains unknown.
-
-## What the simulator does
-
-| Layer | Implemented capability |
+| Screen | Purpose |
 |---|---|
-| Physics-informed calculator | Declared combustion chemistry, fuel properties, static heat accounting and burner loading |
-| Functional firing control | Temperature selection, directional requests, conserved distribution and authority constraints |
-| Scenario laboratory | Thirteen static teaching cases with deterministic explanations |
-| Application | Eight Streamlit views connecting results, assumptions and limits |
-| Bounded supervisor | Current-state grounding, optional provider, strict validation and fallback |
+| **Furnace Overview** | Current operating study, KPI deviation, automatic sensitivity and six-zone firing state |
+| **Scenario Studio** | Thirteen bounded static operating/disturbance templates |
+| **Combustion** | Fuel composition, LHV, lower Wobbe, air requirement and O₂ sensitivity |
+| **Thermal Performance** | Chemical input, useful-duty partition, radiant/convection duty and residual heat |
+| **Firing & Zones** | Inlet/outlet, bottom/sidewall and six-zone conserved firing distribution |
+| **Control Response** | Functional fuel-pressure authority plus bounded draft teaching correlations |
+| **Sensitivity Lab** | User-selected supported X → Y engineering parameter sweeps |
+| **Case Comparison** | Baseline, current and saved operating-study comparison |
+| **Model Limits** | Explicit numerical and physical boundaries |
 
-## Furnace architecture
+## Example investigations
 
-The hero schematic connects feed and steam through convection preheat, radiant coils and the process outlet. Fuel feeds bottom, sidewall and outlet firing; flue gas transfers heat before reaching the ID fan/exhaust. Six inlet zones and two process passes are illustrative functional groups, not reproduced geometry.
+A user can ask questions such as:
+
+- If H₂ rises from 20 to 50 mol%, how do mass LHV, lower Wobbe, stoichiometric air and equivalent fuel demand change?
+- If excess air rises, what happens to actual air and ideal dry O₂?
+- If total firing rises at fixed distribution, how do inlet, outlet and maximum-zone duties change?
+- If the inlet/outlet firing ratio changes, how is the same total duty redistributed?
+- If Zone C receives an explicit teaching correction, how much do the other five zones donate while inlet firing remains conserved?
+- If fuel-pressure authority changes, which functional control authority is active?
+- Under the optional fixed-resistance draft teaching model, how does relative airflow vary with furnace draft?
+
+Unsupported questions remain unsupported rather than being filled with plausible-looking numbers.
+
+## Intelligent fuel composition
+
+The workbench never asks the user to manually repair a fuel composition after every change.
+
+For example, starting from:
+
+\`\`\`text
+H2   20%
+CH4  70%
+C2H6 10%
+N2    0%
+\`\`\`
+
+setting H₂ to 40% automatically renormalizes the unlocked balance while preserving the relative proportions of the other unlocked components. Components may be locked when they should remain fixed.
+
+## Sensitivity curves, not decorative charts
+
+The central plots are one-factor engineering studies. They answer:
+
+> **What happens to Y if I vary X while holding the other current-case inputs fixed?**
+
+Each supported plot contains:
+
+- the full sensitivity curve;
+- the **current** operating-study point;
+- the retained **baseline** point;
+- a basis label such as **CALCULATED**, **ASSUMPTION + CALCULATED**, or **MODEL / ASSUMPTION**.
+
+These curves are not time histories. Version 2.0 does not integrate furnace dynamics.
+
+## Engineering Guidance
+
+The right-hand guidance rail reacts to the parameter being changed.
+
+For a fuel-composition change it can distinguish, for example:
+
+- **calculated:** fuel demand, mixture energy properties, stoichiometric/actual air;
+- **qualitative:** flame-speed or burner-operability implications;
+- **not predicted:** flashback limit, NOx, flame shape or plant stability margin.
+
+For a draft change it explains the pressure/airflow concept while clearly stating that no plant fan curve, burner-register model or leakage coefficient is available.
+
+This separation is deliberate: engineering reasoning is useful only when its evidence boundary is visible.
 
 ## Engineering model
 
-Every public engineering value is labelled **REFERENCE**, **CALCULATED**, **ASSUMPTION**, **SYNTHETIC** or **UNAVAILABLE**. Calculations preserve dependency categories; null values require an unavailable reason. The independent public dataset describes teaching conditions, not an operating facility.
+For a declared mixture with elemental totals \(C,H,O,N\), ideal complete combustion uses:
 
-[Technical methods](docs/methodology.md) · [Data policy](docs/data_policy.md) · [Engineering story](docs/engineering_story.md)
+\[
+n_{O_2,st}=C+\frac{H}{4}-\frac{O}{2}
+\]
 
-## Combustion and fuel comparison
+and dry-air demand:
 
-For the elemental totals in one mole of a declared mixture:
+\[
+n_{air}=4.76\,n_{O_2,st}(1+e)
+\]
 
-$$n_{O_2,st}=C+H/4-O/2,\qquad n_{air}=4.76\,n_{O_2,st}(1+e)$$
+For fixed chemical duty:
 
-Ideal complete combustion provides product amounts and wet/dry oxygen. Mass LHV, normal-volume LHV and lower Wobbe use explicit conventions; normal volume is defined at 273.15 K and 100 kPa absolute.
+\[
+\dot m_f=\frac{Q_{fired}}{LHV_m}
+\]
 
-$$Q_{fired}=\dot m_f LHV_m\quad\Rightarrow\quad\dot m_f=Q_{fired}/LHV_m$$
+The thermal workbench uses a conserved static partition:
 
-For the **synthetic baseline mixture**, 60 MW divided by approximately 52.12 MJ/kg gives **1.151 kg/s** equivalent fuel demand. This is fixed chemical-duty arithmetic, not measured flow or predicted heat transfer.
+\[
+Q_{fired}=Q_{radiant}+Q_{convection}+Q_{residual}
+\]
 
-![Public teaching fuels at equal chemical duty](assets/fuel_comparison.svg)
+Six-zone and outlet allocation preserves total firing:
 
-## Thermal performance
+\[
+Q_{fired}=\sum_{i=A}^{F}Q_i+Q_{outlet,bottom}+Q_{outlet,sidewall}
+\]
 
-![Synthetic 60 MW heat accounting](assets/heat_balance.svg)
+The optional draft sensitivity uses a clearly labelled fixed-effective-resistance teaching relation:
 
-The teaching balance is **60 MW input = 27 MW radiant + 28 MW convection + 5 MW residual**, giving 91.67% reference accounting efficiency. Residual heat is not separately identified as wall or stack loss. Control events do not recalculate radiant absorption or outlet temperature.
+\[
+Q_{air,rel}=\sqrt{\frac{|P_{draft}|}{|P_{draft,ref}|}}
+\]
 
-## Firing-control architecture
-
-![Independent conceptual control architecture](assets/control.svg)
-
-Normal demand authority can be superseded by an explicit pressure-constraint event. No plant-specific pressure threshold or valve position is introduced.
-
-![Normal versus pressure-constraint authority](assets/control_authority_example.svg)
-
-Physical distribution is distinct from controller request:
-
-$$\sum_{i=A}^{F} f_i=1,\qquad Q_{fired}=\sum_i Q_i+Q_{outlet,bottom}+Q_{outlet,sidewall}$$
-
-Initially all shares are 1/6. An explicit teaching correction adds 0.03 to Zone C and subtracts 0.006 from each other zone. Total inlet firing remains **36 MW**. A temperature error alone never generates that correction.
-
-![Conserved six-zone redistribution](assets/zone_redistribution.svg)
-
-## Scenario laboratory
-
-| Teaching case | Main distinction |
-|---|---|
-| Normal and fuel changes | Reference duty versus equivalent mass demand |
-| Zone temperature and target bias | Changed measurement versus changed target; request versus allocation |
-| Explicit redistribution | Location changes while total duty is conserved |
-| Capacity increase | Steam base demand versus delivered steam |
-| Pressure constraint | Authority transfer versus physical response |
-| Partial/total shutdown teaching states | Functional policy versus proven isolation |
-| Pass imbalance and outlet split | Proxy classification and physical duty allocation |
-
-The [thirteen scenarios](docs/scenarios.md) are static events, not a time-integrated furnace simulation.
-
-## Bounded AI Engineering Supervisor
-
-![Public engineering reasoning path](assets/scenario_reasoning.svg)
-
-Verified engineering state → sanitized grounding pack → optional provider → structured assessment → validator → accepted catalogue result or deterministic fallback.
-
-The supervisor cannot change engine authority or create missing numerical relationships. AI is optional; the application works without a provider. The bundled **deterministic contract demo is not an AI model**. Closed-catalogue acceptance does not establish unrestricted reasoning quality or autonomous operating capability. [Supervisor contract](docs/ai_supervisor.md).
-
-## Validation
-
-**128 public tests passed · 0 failed · 0 skipped**
-
-- Clean isolated installation, public examples and CLI verified.
-- Application startup and eight Streamlit views verified.
-- Private workspace access was not required; reads were denied during isolated execution.
-- Unsupported functions are tested to remain unavailable.
-
-These are public software/equation checks, not plant validation. [Validation scope](docs/validation.md) · [Reproducibility](docs/reproducibility.md).
+It is not a plant airflow calibration.
 
 ## Model boundaries
 
-| SUPPORTED | NOT CLAIMED |
-|---|---|
-| Ideal combustion for declared teaching mixtures | CFD or local flame prediction |
-| Fuel-energy calculations and static heat accounting | Rigorous cracking or quantitative coking kinetics |
-| Burner loading and firing conservation | Tube-life prediction |
-| Six-zone redistribution and temperature selection | Calibrated dynamics or identified PID tuning |
-| Functional authority and static scenarios | Valve-position or calibrated draft-airflow prediction |
-| Deterministic explanations and bounded AI architecture | Plant safety determination, APC/BMS replacement or plant-validated optimization |
+**Supported:** ideal declared combustion, mixture energy-property comparison, static heat accounting, conserved firing allocation, steam base demand, functional pressure authority, one-factor sensitivity analysis, deterministic guidance and static scenario studies.
 
-[Full model boundaries](docs/model_boundaries.md).
+**Not claimed:** CFD, local flame temperature/shape, flame-speed prediction, flashback limits, CO/NOx prediction, rigorous cracking or coking kinetics, tube-metal temperature, tube life, local heat flux, identified dynamic COT response, PID tuning, valve characteristics, calibrated fan/register/leakage response, plant safety logic or autonomous control.
 
-## Application
+See [Model boundaries](docs/model_boundaries.md) and [Methodology](docs/methodology.md).
 
-Overview · Thermal performance · Fuel comparison · Firing distribution · Control architecture · Scenario Lab · AI Engineering Supervisor · Model boundaries.
+## Run locally
 
-The figures above are publication-safe model-derived SVG portfolio figures, **not screenshots**. Browser screenshot tooling was unavailable; application execution was checked with Streamlit AppTest and HTTP startup checks.
+Python 3.12 is the CI runtime.
 
-## Repository structure
-
-`src/` engineering and supervisor package · `data/` public inputs · `app/` dashboard · `examples/` CLI demonstrations · `tests/` public suite · `docs/` methods and boundaries · `assets/` diagrams and figures · `tools/` figure generation.
-
-## Installation
-
-Python 3.10+ is declared; **Python 3.12 is tested and used by the CI workflow**.
-
-```bash
+\`\`\`bash
+git clone https://github.com/abbasrajaei/Pyrolysis-Furnace-Intelligence.git
+cd Pyrolysis-Furnace-Intelligence
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install ".[test]"
-python -m pytest -q
-python -m streamlit run app/app.py --server.address 127.0.0.1
-```
+python app/app.py
+\`\`\`
 
-On Windows, activate with `.venv\Scripts\activate`. The dashboard uses repository assets; installed calculators carry their own public YAML resources.
+On Windows:
 
-## Example usage
+\`\`\`bat
+.venv\\Scripts\\activate
+python -m pip install ".[test]"
+python app/app.py
+\`\`\`
 
-```bash
-python examples/fuel_comparison.py
-python examples/all_scenarios.py
-pyrolysis-demo --scenario zone_temperature
-```
+Then open:
 
-To regenerate the portfolio figures:
+\`\`\`text
+http://127.0.0.1:8050
+\`\`\`
 
-```bash
-python -m pip install ".[figures]"
-python tools/generate_portfolio_figures.py
-```
+The application exposes \`server = app.server\` and includes a \`Procfile\` / \`render.yaml\` for hosted deployment with Gunicorn.
 
-## Engineering relevance
+## Validation
 
-The project connects industrial combustion, heat accounting and control reasoning in a form relevant to olefin furnaces, fired heaters and energy-efficiency investigations. Reduced variability may permit less unnecessary operating margin where constraints allow, but this model does not quantify plant fuel savings, emissions reductions or run-length improvement.
+The Python 3.12 GitHub Actions workflow installs the public package, runs the complete public engineering/workbench test suite, executes both public examples and the CLI, and verifies the Dash HTTP root.
 
-## Disclaimer
+The current exact test count is recorded by the latest successful workflow run. Passing tests establish software/equation behavior against the declared teaching model; they do not establish real-furnace accuracy or safe operation.
 
-Independently reconstructed educational/research software; not a plant operating tool, safety system or commercial digital twin. Diagrams are independently authored conceptual illustrations. Transient predictions are not plant-validated. [Disclaimer](docs/disclaimer.md).
+See [Validation](docs/validation.md) and [Reproducibility](docs/reproducibility.md).
 
-## Citation / license
+## Repository structure
 
-Author: **Abbas Rajaei**. Citation metadata: [CITATION.cff](CITATION.cff). Independently authored repository content is available under the [MIT license](LICENSE); third-party dependencies retain their own terms.
+\`\`\`text
+app/        Dash engineering workbench + industrial-style CSS
+src/        combustion, thermal, firing, control, sensitivity and guidance engine
+data/       public synthetic teaching inputs
+tests/      public engineering and application test suite
+examples/   CLI engineering examples
+docs/       methodology, validation, data policy and model boundaries
+assets/     portfolio figures retained for GitHub documentation
+\`\`\`
+
+## License and citation
+
+Author: **Abbas Rajaei**
+
+Software version: **2.0.0**
+
+Citation metadata: [CITATION.cff](CITATION.cff)  
+License: [MIT](LICENSE)

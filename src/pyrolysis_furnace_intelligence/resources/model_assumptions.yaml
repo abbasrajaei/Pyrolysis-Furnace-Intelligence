@@ -1,20 +1,11 @@
-ideal_combustion: Complete CHON combustion; no dissociation, CO, soot, NOx or oxygen-deficient
-  chemistry.
-normal_volume: Ideal gas at the explicitly declared temperature and pressure; lower
-  Wobbe basis.
-heat_accounting: Three fixed compatible teaching duties; no automatic off-design heat
-  partition.
-temperature_proxy: 'Illustrative hierarchy: second-highest of four sensors in each
-  of six zones, then second-highest of six results. All sensors required. Not a recovered
-  vendor implementation or bulk COT measurement.'
-distribution: Uniform composition; inlet/outlet and outlet bottom/side ratios are
-  physical duty ratios. Equal donor redistribution is an educational conservation
-  rule.
-authority: Simplified educational state policy, not a deployed shutdown or interlock
-  sequence. Simultaneous overrides have no selected priority.
-steam_lead: Base steam demand uses larger actual/requested feed times explicit ratio;
-  no timing or delivery prediction.
-burner_loading: Counts are synthetic; per-burner arithmetic assumes equal loading
-  within each class and all inlet duty assigned to bottom burners.
-draft: Draft is a declared input only. No airflow conversion or fan curve.
+ideal_combustion: Complete CHON combustion; no dissociation, CO, soot, NOx or oxygen-deficient chemistry.
+normal_volume: Ideal gas at the explicitly declared temperature and pressure; lower Wobbe basis.
+heat_accounting: Useful heat recovery and radiant share define a static conserved teaching partition; no automatic off-design heat-transfer model.
+temperature_proxy: 'Illustrative hierarchy: second-highest of four sensors in each of six zones, then second-highest of six results. All sensors required. Not a recovered vendor implementation or bulk COT measurement.'
+distribution: Uniform composition; inlet/outlet and outlet bottom/side ratios are physical duty ratios. Equal-donor zone redistribution is an educational conservation rule.
+authority: Simplified educational state policy, not a deployed shutdown or interlock sequence. Simultaneous overrides have no selected priority.
+steam_lead: Base steam demand uses larger actual/requested feed times explicit ratio; no timing or delivery prediction.
+burner_loading: Counts are synthetic; per-burner arithmetic assumes equal loading within each class and all inlet duty assigned to bottom burners.
+draft: 'Optional teaching correlation only: at fixed effective flow resistance, relative airflow is proportional to sqrt(abs(draft)/abs(reference draft)). No fan curve, register model, leakage coefficient or plant calibration.'
+guidance: Context-sensitive explanations are deterministic engineering guidance. They distinguish calculated, assumed and qualitative consequences and do not issue operating commands.
 ai: Closed claim catalogue for review only. No actuator commands or safety determinations.
