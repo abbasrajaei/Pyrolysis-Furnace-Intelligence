@@ -21,3 +21,8 @@ The public model illustrates those interactions but does not quantify fuel savin
 ## What this portfolio demonstrates
 
 The contribution is an inspectable engineering argument: declare the physical basis, preserve conservation, distinguish request from response, expose assumptions, and prevent a software explanation from exceeding its evidence. The same habits apply to fired heaters and other combustion-intensive processes, while their geometry, reactions, fuel systems and constraints require their own models.
+
+
+## Workbench 2.0
+
+The second public interface was redesigned around an engineering-study workflow rather than a collection of sliders and static charts. A retained baseline, intelligent linked fuel composition, ready-made presets, sensitivity curves, saved-case comparison and a persistent Engineering Guidance rail make the model usable as an investigation tool. The guidance rail reacts to the parameter being changed and separates calculated consequences from qualitative physical implications and unsupported predictions. The numerical engine remains bounded by the same evidence policy: interface quality does not justify additional plant physics.

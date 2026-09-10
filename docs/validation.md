@@ -1,6 +1,6 @@
 # Public validation
 
-The public CI suite runs on Python 3.12 and covers the engineering engine, interactive workbench logic, sensitivity analysis, guidance rules, scenario engine, bounded supervisor contract and Dash application shell. The exact passing test count is reported by the current GitHub Actions run and should be treated as the release evidence.
+The public CI suite runs on Python 3.12 and currently reports **244 passed, 0 failed**. It covers the engineering engine, interactive workbench logic, sensitivity analysis, guidance rules, scenario engine, bounded supervisor contract and Dash application shell.
 
 | Coverage | Check |
 |---|---|

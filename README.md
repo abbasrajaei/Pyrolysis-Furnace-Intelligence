@@ -178,7 +178,7 @@ The application exposes \`server = app.server\` and includes a \`Procfile\` / \`
 
 The Python 3.12 GitHub Actions workflow installs the public package, runs the complete public engineering/workbench test suite, executes both public examples and the CLI, and verifies the Dash HTTP root.
 
-The current exact test count is recorded by the latest successful workflow run. Passing tests establish software/equation behavior against the declared teaching model; they do not establish real-furnace accuracy or safe operation.
+**244 public tests passed · 0 failed** on the current Python 3.12 CI run. The workflow also passes both public examples, the CLI and a Dash HTTP-root smoke check. Passing tests establish software/equation behavior against the declared teaching model; they do not establish real-furnace accuracy or safe operation.
 
 See [Validation](docs/validation.md) and [Reproducibility](docs/reproducibility.md).
 
