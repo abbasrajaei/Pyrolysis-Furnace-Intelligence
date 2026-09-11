@@ -1,150 +1,322 @@
 # Technical methodology
 
-All numerical examples use the public teaching dataset. SI units are used except explicitly labelled normal-volume quantities. Model functions do not read any external engineering evidence.
+Pyrolysis Furnace Intelligence is a public educational engineering workbench. The active interface has two connected layers: **Combustion** and **Heat transfer**. Public operating values are synthetic or generalised. The software does not read proprietary source documents at runtime.
 
-## Fuel and combustion
+## Combustion layer
 
-For a declared mole-fraction mixture, mole fractions must sum to one. The engineering engine rejects incomplete or invalid compositions. The **workbench interface** adds a convenience layer: when the user changes one selected component, all unlocked remaining components are renormalized proportionally so the total remains exactly one. Locked components retain their values. This automatic closure is an interface rule, not a new combustion model.
-
-For one mole of mixture with elemental totals C, H, O and N:
+The combustion workbench accepts a declared gaseous-fuel composition containing:
 
 \[
-\nu_{O_2,st}=C+H/4-O/2
+H_2,\ CH_4,\ C_2H_4,\ C_2H_6,\ C_3H_8,\ CO,\ CO_2,\ N_2
 \]
 
-The dry-air assumption is one mole O2 plus 3.76 mol N2. With declared excess-air fraction e ≥ 0:
+Fuel mole fractions must close to one. In the interface, when one component is changed a selected balance component is adjusted so the total remains 100%.
+
+For one mole of mixture with elemental totals \(C\), \(H\) and \(O\), theoretical oxygen demand is:
 
 \[
-n_{air,st}=4.76\nu_{O_2,st},\qquad
-n_{air}=n_{air,st}(1+e)
+\nu_{O_2,st}=C+\frac{H}{4}-\frac{O}{2}
 \]
 
-Products are C mol CO2, H/2 mol H2O, eν mol O2 and N/2 + 3.76(1+e)ν mol N2. Wet and dry oxygen use their respective product totals. The model checks C/H/O/N atom residuals. It excludes oxygen-deficient reactions, dissociation, humidity, argon, soot and NOx. Dry oxygen is not interpreted as a direct diagnosis of burner excess air when leakage might exist in a real furnace.
+Actual oxygen and air are calculated from the selected excess-air fraction. The current combustion workbench also includes nitrogen, argon and water carried in with the declared humid ambient-air basis.
 
-Rounded component molecular masses and lower heating values provide an explicitly pedagogical property basis. Water is vapor in the LHV convention. For mole fractions x:
+The model assumes complete combustion. It does not calculate oxygen-deficient products, dissociation, soot, CO or NOx formation.
+
+### Fuel properties
+
+For mole fractions \(x_i\):
 
 \[
-M_f=\sum_i x_iM_i,\qquad
-LHV_m=\frac{\sum_i x_iM_iLHV_i}{M_f},\qquad
-\dot m_f=Q_f/LHV_m
+M_f=\sum_i x_iM_i
 \]
 
-Equivalent fuel demand is a fixed chemical-duty calculation; it does not assert equal heat transfer, constant outlet temperature or a measured fuel-flow response.
+Mass lower heating value is calculated from rounded public component values:
 
-The declared normal state is 273.15 K and 100000 Pa absolute, with ideal-gas compressibility. Molar density is P/(RT). Lower volumetric heating value is molar density times molar LHV, and:
+\[
+LHV_m=
+\frac{\sum_i x_iM_iLHV_i}{M_f}
+\]
+
+For the declared normal-volume basis, volumetric LHV and lower Wobbe Index are then calculated as:
 
 \[
 WI_L=\frac{LHV_V}{\sqrt{M_f/M_{air}}}
 \]
 
-This explicit convention prevents ambiguity between mass LHV and normal-volume Wobbe. It is not an installed burner/valve map. The property references are rounded teaching values, not a precision thermophysical database or an uncertainty-qualified property correlation.
+These values support fuel-comparison studies. They are not an installed burner, valve or fuel-gas-system calibration.
 
-## Static heat accounting
+### Fired duty and fuel-flow study basis
 
-The workbench replaces two independent heat-share sliders with a more robust pair of inputs:
-
-- **useful heat recovery**, η;
-- **radiant share of useful heat**, r.
-
-Then:
+The normal operating study uses a public start-of-run or end-of-run teaching case. Process load is represented by a source-informed load index:
 
 \[
-Q_{useful}=\eta Q_f
+L=
+\dot m_{HC}
++
+k_s\dot m_{steam}
+\]
+
+with:
+
+\[
+k_s=\frac{1}{3}
+\]
+
+The required fired duty scales from the selected public teaching condition:
+
+\[
+Q_{required}
+=
+Q_{ref}
+\frac{L}{L_{ref}}
+\]
+
+This is an engineering approximation around normal operating conditions, not a rigorous cracking-reaction model. A low-load warning is generated when the selected feed falls below the intended normal-load range.
+
+Fuel-composition studies support three declared bases:
+
+1. **Keep fired duty constant**
+
+\[
+\dot m_f=\frac{Q_{fired}}{LHV}
+\]
+
+2. **Keep fuel mass flow constant**
+
+Fuel flow remains fixed and fired duty changes with LHV.
+
+3. **Keep burner pressure difference constant**
+
+The workbench uses a Wobbe-based approximation:
+
+\[
+\frac{Q_2}{Q_1}
+\approx
+\frac{WI_2}{WI_1}
+\]
+
+This third mode is a fuel-interchangeability study, not a plant burner-flow map.
+
+### Burner allocation
+
+The current combustion page supports a bottom/sidewall firing split while conserving total fired duty:
+
+\[
+Q_{bottom}=f_bQ_{fired}
 \]
 
 \[
-Q_r=rQ_{useful},\qquad
-Q_c=(1-r)Q_{useful}
+Q_{sidewall}=(1-f_b)Q_{fired}
+\]
+
+Public burner counts and loading points are generalised teaching values.
+
+## Heat-transfer and thermal-efficiency layer
+
+The heat-transfer layer uses the **current combustion result**. It does not create an independent furnace. Therefore changes in feed, excess air or fuel composition can propagate into the thermal calculation.
+
+The furnace energy balance is:
+
+\[
+Q_{fired}
+=
+Q_{radiant}
++
+Q_{convection}
++
+Q_{stack}
++
+Q_{other}
+\]
+
+### Stack sensible-heat loss
+
+\[
+Q_{stack}
+=
+\frac{
+\dot m_{fg}
+C_{p,fg}^{eff}
+(T_{stack}-T_{ambient})
+}
+{3.6\times10^6}
+\]
+
+where flue-gas flow is in kg/h and the public effective heat capacity is:
+
+\[
+C_{p,fg}^{eff}=1.34\ \text{kJ/kg-K}
+\]
+
+This is a source-informed lumped value. It is not a composition-dependent flue-gas property package.
+
+### Other heat loss
+
+\[
+Q_{other}=f_{loss}Q_{fired}
+\]
+
+The public default is 1% of fired duty. This term represents casing/radiation and other unmodelled heat loss separately from stack sensible heat.
+
+### Useful heat and overall efficiency
+
+\[
+Q_{useful}
+=
+Q_{fired}
+-
+Q_{stack}
+-
+Q_{other}
 \]
 
 \[
-Q_{residual}=Q_f-Q_r-Q_c
+\eta_{overall}
+=
+\frac{Q_{useful}}{Q_{fired}}
 \]
 
-This guarantees a physically consistent static accounting partition for valid inputs 0 ≤ η ≤ 1 and 0 ≤ r ≤ 1.
+### Radiant and convection split
 
-The baseline teaching case uses 60 MW chemical input, 55/60 useful heat recovery and 27/55 radiant share, reproducing 27 MW radiant duty, 28 MW convection duty and 5 MW residual. The residual is not independently identified as wall loss or stack loss. There is no off-design radiation or convection model.
-
-## Firing allocation
-
-The inlet/outlet ratio a and outlet bottom/sidewall ratio b are defined as physical duty ratios:
+The public heat-transfer page uses a declared radiant share of fired duty:
 
 \[
-Q_o=Q_f/(1+a),\qquad Q_i=Q_f-Q_o
+Q_{radiant}
+=
+f_{radiant}Q_{fired}
 \]
+
+and:
 
 \[
-Q_{os}=Q_o/(1+b),\qquad Q_{ob}=Q_o-Q_{os}
+Q_{convection}
+=
+Q_{useful}
+-
+Q_{radiant}
 \]
 
-Six inlet shares f sum to one; zone j receives Q_i f_j. A separately supplied teaching increment δ to one selected zone is removed equally from the other five zones. The proposed update is rejected as a whole if any share falls outside [0,1]. No clipping or hidden normalization is used. The sum of six zone duties plus outlet bottom and sidewall duty must equal total duty within numerical tolerance.
+The radiant share is a **study assumption**. It is not presented as a direct operator actuator.
 
-Synthetic burner counts and equal loading permit illustrative per-burner duty arithmetic. These values are teaching arithmetic, not installed burner limits.
-
-## Temperature selection and process demand
-
-The bounded scenario engine retains an illustrative sensor hierarchy that selects the second-highest of four sensors for each of six zones, then the second-highest of those six selected values. It is not a single global second-highest across all sensors. Tied ranks count separately. Missing sensors make the affected zone and overall result unavailable; no degraded voting is invented.
-
-Zone request direction follows target + bias − selected proxy. It does not generate a numerical firing increment. A bias changes the target, not the measurement. No PID, recovery time or temperature-to-firing process gain is implemented.
-
-Steam base demand is max(actual feed, requested feed) times declared steam/feed ratio. In the interactive workbench, the current feed is used as the selected feed basis. The result is not a delivered-flow prediction and has no temporal realization.
-
-## Draft and excess-air interpretation
-
-An induced-draft fan establishes a pressure field that helps move combustion air and flue gas through system resistance. Real air admission also depends on burner/register position, density, leakage paths and fan operating point. Therefore draft alone is not a plant airflow calibration.
-
-For educational sensitivity only, version 2.0 introduces an optional **fixed-effective-resistance teaching correlation**:
+Box efficiency is shown as:
 
 \[
-Q_{air,rel}=\sqrt{\frac{|P_{draft}|}{|P_{draft,ref}|}}
+\eta_{box}
+=
+\frac{Q_{radiant}}{Q_{fired}}
 \]
 
-with a reference draft of -40 Pa(g) in the synthetic workbench case.
+### Radiant heat flux
 
-An implied excess-air fraction can then be formed relative to the selected current excess-air basis:
+Average teaching heat flux is:
 
 \[
-e_{implied}=(1+e_{base})Q_{air,rel}-1
+q''_{avg}
+=
+\frac{Q_{radiant}}{A_{radiant}}
 \]
 
-This relation is explicitly labelled **MODEL / ASSUMPTION**. It is useful for exploring the direction and nonlinearity of a square-root pressure/flow relation, not for predicting plant air flow, stack O2, fan power, leakage or safe draft.
+using the public effective area:
 
-## Sensitivity engine
+\[
+A_{radiant}=420\ \text{m}^2
+\]
 
-Each sensitivity curve varies one supported independent input over a declared range while holding the other current-case inputs fixed. The curve therefore answers:
+Peak teaching heat flux is:
 
-> What would the model calculate for Y if X were changed, with this current case as the basis?
+\[
+q''_{peak}=1.14\,q''_{avg}
+\]
 
-The orange point is the current case and the grey point is the retained baseline. These curves are **not time histories**.
+The area and peak/average factor are public model values. These outputs show heat-loading sensitivity; they are not local tube-by-tube radiation predictions.
 
-Supported sweeps include fuel-component fraction, excess air, chemical duty, heat recovery, radiant share, inlet/outlet firing ratio, bottom/side ratio, feed rate, steam/feed ratio, explicit zone correction and draft pressure. Output choices are limited to relationships implemented by the public model.
+### Convection heat recovery
 
-Fuel-component sweeps automatically renormalize the other composition components. Zone-correction sweeps remain explicit user-supplied redistribution, not a PID output. Draft sweeps remain labelled model assumptions.
+The public convection duty is distributed across the six process/service groups:
 
-## Engineering Guidance
+| Bank | Public share |
+|---|---:|
+| HTC-II | 26% |
+| HPSSH-II | 15% |
+| HPSSH-I | 16% |
+| HTC-I | 22% |
+| ECO | 12% |
+| FPH | 9% |
 
-The persistent guidance rail is deterministic. It reacts to the most recently changed parameter and returns five kinds of information:
+These rounded shares sum to 100% and preserve the physical multi-service convection-section concept. They do not reproduce proprietary bank rating calculations.
 
-1. what changed;
-2. why the parameter matters physically;
-3. immediate calculated or qualitative consequences;
-4. variables an engineer would normally watch;
-5. model basis and unavailable conclusions.
+A fuller thermal description is in docs/heat_transfer_methodology.md.
 
-The panel may mention qualitative combustion effects such as flame-speed or flashback implications, but it does not convert those statements into numerical predictions. Guidance never changes model state and never issues operating commands.
+## Cross-module effects
 
-## Control and scenarios
+The active workbench is designed so the two layers remain physically connected.
 
-Three educational states and explicit pressure constraints select functional authority. Total and partial shutdown teaching states select their respective generic authorities and withhold numerical allocation. Concurrent low/high constraints, or undefined manual/constraint arbitration, return UNAVAILABLE. These policies are independently simplified teaching rules, not a recovered installed sequence.
+For example, at fixed stack temperature:
 
-Thirteen named scenarios alter declared inputs or functional interpretation. Before/after comparisons are independent static evaluations, not samples from a time integration.
+\[
+EA\uparrow
+\rightarrow
+\dot m_{fg}\uparrow
+\rightarrow
+Q_{stack}\uparrow
+\rightarrow
+\eta_{overall}\downarrow
+\]
 
-## Provenance and unavailable behavior
+A fuel-composition change can alter flue-gas flow and therefore stack sensible-heat loss. A feed-rate change alters required firing and, with the same public radiant-share and geometry assumptions, changes radiant duty and heat flux.
 
-REFERENCE identifies general rounded property inputs. SYNTHETIC identifies teaching conditions. ASSUMPTION identifies explicit modeling conventions. CALCULATED results retain dependency categories and an equation/basis description. UNAVAILABLE always has a null value and a reason. Dependency categories do not constitute a full uncertainty analysis.
+The selected combustion hold mode is retained when a fuel-composition study is viewed in the Heat Transfer module.
 
-## Supervisor architecture
+## Response graphs
 
-The bounded supervisor remains separate from the deterministic Engineering Guidance panel. The grounding builder recomputes the named scenario and requires exact equality with the supplied snapshot. It then creates evidence IDs, a state digest, limitations and an approved explanation catalogue. Structured provider output must match state, authority, evidence, limitations and approved claims; unsupported numerical plant claims or actuator commands are rejected.
+The main response graphs are one-factor engineering studies.
 
-No provider, provider exception or rejected output produces the deterministic fallback. The bundled CatalogueDemo is deterministic contract scaffolding, not AI inference. External endpoint compatibility, unrestricted reasoning and plant validation are outside this release.
+The last supported input changed by the user becomes the x-variable. The selected engineering response becomes the y-variable. Every displayed square is recalculated using the same model as the numerical result cards.
+
+The larger **Before** and **Now** squares show two static states. They do not represent a time trajectory.
+
+## Why tube-metal temperature and coking are not calculated
+
+The physical source basis shows that coke retards heat transfer, raises tube-metal temperature and increases radiant-coil pressure drop. It also shows that tube temperature can become an operating limitation.
+
+The public project does not yet calculate a current tube-metal temperature or coking rate because a defensible model would require additional information such as:
+
+- local heat flux;
+- local tube and process-fluid temperature;
+- process-side heat-transfer coefficient;
+- tube thermal conductivity;
+- coke thickness and conductivity;
+- local radiation/view-factor information.
+
+The workbench therefore stops at heat loading rather than inventing a precise tube-metal-temperature result.
+
+## Draft
+
+Draft is physically connected with burner pressure difference and air admission, but the current combustion cockpit does not use draft as a calibrated quantitative airflow input.
+
+A legacy educational engine retained in the repository includes a fixed-effective-resistance relation:
+
+\[
+Q_{air,rel}
+=
+\sqrt{
+\frac{|P_{draft}|}
+{|P_{draft,ref}|}
+}
+\]
+
+It remains explicitly labelled as a teaching assumption and is not used as a plant air-flow calibration.
+
+## Retained firing/control teaching modules
+
+The repository still contains earlier educational modules for firing allocation, temperature selection, pressure-authority states, scenarios, deterministic engineering guidance and a bounded supervisor contract.
+
+These modules are not presented as recovered plant logic. They remain simplified educational structures and do not calculate PID tuning, valve trajectories, trip timing or autonomous control actions.
+
+## Provenance and public-data policy
+
+The public repository distinguishes general property references, synthetic/public teaching conditions, assumptions and calculated values.
+
+Proprietary plant drawings and exact operating datasets are not included in the public model. The figures in assets/ are independently authored conceptual diagrams.
+
+For the full capability boundary, see docs/model_boundaries.md.
