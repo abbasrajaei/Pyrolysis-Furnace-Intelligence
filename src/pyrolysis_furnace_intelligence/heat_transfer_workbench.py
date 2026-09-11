@@ -125,7 +125,13 @@ def thermal_defaults(operating_case):
     return deepcopy(PUBLIC_THERMAL_CASES[operating_case])
 
 
-def evaluate_thermal(combustion_case=None, thermal_settings=None):
+def evaluate_thermal(
+    combustion_case=None,
+    thermal_settings=None,
+    before_combustion_case=None,
+    hold_constant="fired_duty",
+    combustion_changed_input=None,
+):
     case = deepcopy(DEFAULT_CASE)
     case.update(deepcopy(combustion_case or {}))
     settings = thermal_defaults(case["operating_case"])
@@ -142,7 +148,12 @@ def evaluate_thermal(combustion_case=None, thermal_settings=None):
     if not 0 <= other_loss_fraction < 1:
         raise ValueError("Other loss fraction must be between 0 and 1")
 
-    combustion = evaluate_case(case)
+    combustion = evaluate_case(
+        case,
+        before_combustion_case,
+        hold_constant,
+        combustion_changed_input,
+    )
     fired = combustion["firing"]["fired_duty_mw"]
     flue_kg_h = combustion["combustion"]["flue_flow_kg_h"]
 
@@ -319,6 +330,9 @@ def thermal_sweep(
     changed_input,
     output_name=None,
     points=31,
+    before_combustion_case=None,
+    hold_constant="fired_duty",
+    active_combustion_change=None,
 ):
     if changed_input not in THERMAL_RESPONSE_OPTIONS:
         changed_input = "stack_temperature_c"
@@ -339,7 +353,29 @@ def thermal_sweep(
             changed_input,
             value,
         )
-        y.append(thermal_value(evaluate_thermal(case, settings), output_name))
+        change_for_combustion = (
+            changed_input
+            if changed_input in COMPONENTS
+            else active_combustion_change
+        )
+        y.append(
+            thermal_value(
+                evaluate_thermal(
+                    case,
+                    settings,
+                    before_combustion_case,
+                    hold_constant,
+                    change_for_combustion,
+                ),
+                output_name,
+            )
+        )
+
+    current_change_for_combustion = (
+        changed_input
+        if changed_input in COMPONENTS
+        else active_combustion_change
+    )
 
     return {
         "x": x,
@@ -350,7 +386,13 @@ def thermal_sweep(
             changed_input,
         ),
         "y_now": thermal_value(
-            evaluate_thermal(combustion_case, thermal_settings),
+            evaluate_thermal(
+                combustion_case,
+                thermal_settings,
+                before_combustion_case,
+                hold_constant,
+                current_change_for_combustion,
+            ),
             output_name,
         ),
         "input": changed_input,
