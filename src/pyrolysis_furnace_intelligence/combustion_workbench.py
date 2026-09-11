@@ -141,7 +141,7 @@ OUTPUTS={
 "flue_flow":("Flue-gas flow","t/h",("combustion","flue_flow_kg_h")),
 "dry_o2":("O₂, dry","%",("combustion","dry_o2_pct")),
 "dry_co2":("CO₂, dry","%",("combustion","dry_co2_pct")),
-"co2":("CO₂ from combustion","t/h",("combustion","co2_formed_kg_h")),
+"co2":("CO₂ produced","t/h",("combustion","co2_formed_kg_h")),
 "co2_intensity":("CO₂ intensity","kg/MWh",("combustion","co2_intensity_kg_MWh")),
 "burner_load":("Average burner load","MW/burner",("firing","average_burner_mw")),
 "bottom_burner":("Bottom burner load","MW/burner",("firing","bottom_burner_mw")),
@@ -225,7 +225,7 @@ def simple_explanation(name,before,current,hold_constant="fired_duty"):
 def comparison_rows(before_case,current_case,hold_constant="fired_duty",changed_input=None):
     before=evaluate_case(before_case); now=evaluate_case(current_case,before_case,hold_constant,changed_input)
     metrics=[("Fuel flow","fuel_flow","kg/h"),("LHV","lhv","MJ/kg"),("Wobbe index","wobbe","MJ/Nm³"),
-    ("Air flow","air_flow","t/h"),("Flue-gas flow","flue_flow","t/h"),("CO₂ from combustion","co2","t/h"),
+    ("Air flow","air_flow","t/h"),("Flue-gas flow","flue_flow","t/h"),("CO₂ produced","co2","t/h"),
     ("Average burner load","burner_load","MW/burner")]
     rows=[]
     for label,key,unit in metrics:
