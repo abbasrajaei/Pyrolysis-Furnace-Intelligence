@@ -1,778 +1,223 @@
-import os
+from __future__ import annotations
+import os,sys
 from copy import deepcopy
-
-from dash import Dash, dcc, html, Input, Output, State, ctx, no_update
+from pathlib import Path
+ROOT=Path(__file__).resolve().parents[1]; SRC=ROOT/"src"
+if str(SRC) not in sys.path: sys.path.insert(0,str(SRC))
+from dash import Dash,Input,Output,State,ctx,dcc,html,no_update
 import plotly.graph_objects as go
+from pyrolysis_furnace_intelligence.combustion_workbench import (
+ BURNERS,COMPONENTS,DEFAULT_CASE,DEFAULT_RESPONSE,FUEL_INPUTS,OUTPUTS,PUBLIC_CASES,
+ RESPONSE_OPTIONS,comparison_rows,evaluate_case,rebalance_composition,response_sweep,simple_explanation)
 
-from pyrolysis_furnace_intelligence.workbench import (
-    BASE_CASE, PRESETS, COMPONENTS, rebalance_composition, evaluate_case
-)
-from pyrolysis_furnace_intelligence.sensitivity import (
-    INPUTS, OUTPUTS, SUPPORTED, sweep
-)
-from pyrolysis_furnace_intelligence.guidance import guidance
-from pyrolysis_furnace_intelligence.scenario_engine import SCENARIOS, run_scenario
-from pyrolysis_furnace_intelligence.explanations import explain
-
-PLOT_CONFIG={
-    'displaylogo':False,
-    'responsive':True,
-    'modeBarButtonsToRemove':['lasso2d','select2d']
-}
-
-COLORS={
-    'blue':'#1f6f85',
-    'blue2':'#2d8ca4',
-    'teal':'#2b7d70',
-    'amber':'#c47b2a',
-    'slate':'#8aa2ad',
-    'ink':'#173443',
-    'grid':'#e2e8ec',
-    'bg':'#ffffff'
-}
-
-DEFAULT_OUTPUT={
-    'h2_fraction':'fuel_flow','ch4_fraction':'fuel_flow','c2h6_fraction':'fuel_flow','n2_fraction':'fuel_flow',
-    'excess_air':'dry_o2','chemical_duty':'fuel_flow','heat_recovery':'residual_heat',
-    'radiant_share':'radiant_duty','inlet_outlet_ratio':'inlet_firing','bottom_side_ratio':'outlet_bottom',
-    'feed_rate':'steam_demand','steam_feed_ratio':'steam_demand','zone_correction':'max_zone',
-    'draft_pressure':'relative_airflow'
-}
-
-LAST_TO_SENS={
-    'H2':'h2_fraction','CH4':'ch4_fraction','C2H6':'c2h6_fraction','N2':'n2_fraction',
-    'duty_mw':'chemical_duty','excess_air':'excess_air','draft_pa':'draft_pressure',
-    'heat_recovery':'heat_recovery','radiant_share':'radiant_share',
-    'inlet_outlet_ratio':'inlet_outlet_ratio','bottom_side_ratio':'bottom_side_ratio',
-    'feed_kg_s':'feed_rate','steam_ratio':'steam_feed_ratio','zone':'zone_correction',
-    'zone_correction':'zone_correction','pressure_state':'chemical_duty'
-}
-
-app=Dash(
-    __name__,
-    title='Pyrolysis Furnace Intelligence',
-    assets_folder=os.path.join(os.path.dirname(__file__),'assets'),
-    suppress_callback_exceptions=True
-)
+app=Dash(__name__,title="Pyrolysis Furnace Intelligence",suppress_callback_exceptions=True)
 server=app.server
+C={"bg":"#07121D","panel":"#0D1B29","line":"#20384D","text":"#F3F7FA","muted":"#9CB0BF",
+"blue":"#36A7E9","amber":"#F2A93B","green":"#38C995","yellow":"#F2C14E","before":"#8BA0AE"}
 
-def pct(v):
-    return f'{100*v:.1f}%'
+def fmt(v,u):
+ v=float(v)
+ if u=="kg/h": return f"{v:,.0f}"
+ if u in {"t/h","MJ/kg","MJ/Nm³","kg/MWh","MW"}: return f"{v:,.2f}"
+ if u=="MW/burner": return f"{v:.3f}"
+ if u=="%": return f"{v:.2f}"
+ return f"{v:.3f}"
 
-def kpi(label,value,delta=None):
-    delta_class='delta-flat'
-    if isinstance(delta,(int,float)):
-        if delta>1e-9:delta_class='delta-up'
-        elif delta<-1e-9:delta_class='delta-down'
-        delta_text=f'{delta:+.2f}% vs baseline'
-    else:
-        delta_text=delta or ''
-    return html.Div([
-        html.Div(label,className='kpi-label'),
-        html.Div(value,className='kpi-value'),
-        html.Div(delta_text,className=f'kpi-delta {delta_class}')
-    ],className='kpi')
+def composition_view(case):
+ out=[]
+ for k in COMPONENTS:
+  v=100*case["composition"].get(k,0)
+  out.append(html.Div([html.Span(FUEL_INPUTS[k],className="comp-name"),
+   html.Div(html.Div(className="comp-bar-fill",style={"width":f"{min(v,100):.2f}%"}),className="comp-bar"),
+   html.Span(f"{v:.2f}%",className="comp-number")],className="comp-row"))
+ return html.Div(out,className="composition-list")
 
-def figure_layout(fig,title=None):
-    fig.update_layout(
-        paper_bgcolor='white',plot_bgcolor='white',
-        margin=dict(l=48,r=20,t=55 if title else 30,b=48),
-        font=dict(family='Inter, Segoe UI, sans-serif',color=COLORS['ink'],size=12),
-        hoverlabel=dict(bgcolor='white',font_size=12),
-        legend=dict(orientation='h',yanchor='bottom',y=1.01,xanchor='left',x=0),
-        title=dict(text=title,x=.01,xanchor='left',font=dict(size=17)),
-        xaxis=dict(gridcolor=COLORS['grid'],zeroline=False),
-        yaxis=dict(gridcolor=COLORS['grid'],zeroline=False)
-    )
-    return fig
+def card(label,value,unit):
+ return html.Div([html.Div(label,className="result-label"),
+  html.Div([html.Span(value,className="result-value"),html.Span(" "+unit,className="result-unit")])],
+  className="result-card")
 
-def sensitivity_figure(input_name,output_name,case,baseline=None,title=None):
-    data=sweep(input_name,output_name,case)
-    fig=go.Figure()
-    fig.add_trace(go.Scatter(
-        x=data['x'],y=data['y'],mode='lines',
-        line=dict(color=COLORS['blue'],width=3),
-        name='Sensitivity'
-    ))
-    fig.add_trace(go.Scatter(
-        x=[data['current_x']],y=[data['current_y']],mode='markers',
-        marker=dict(size=12,color=COLORS['amber'],line=dict(width=2,color='white')),
-        name='Current'
-    ))
-    if baseline is not None:
-        b=sweep(input_name,output_name,baseline)
-        fig.add_trace(go.Scatter(
-            x=[b['current_x']],y=[b['current_y']],mode='markers',
-            marker=dict(size=10,color=COLORS['slate'],symbol='diamond'),
-            name='Baseline'
-        ))
-    fig.update_xaxes(title=data['x_label'])
-    fig.update_yaxes(title=data['y_label'])
-    figure_layout(fig,title or f"{data['x_label']} → {data['y_label']}")
-    return fig,data
+def results(result):
+ return html.Div([
+  card("Fired duty",f"{result['firing']['fired_duty_mw']:.2f}","MW"),
+  card("Fuel flow",f"{result['fuel']['fuel_flow_kg_h']:,.0f}","kg/h"),
+  card("LHV",f"{result['fuel']['lhv_MJ_kg']:.2f}","MJ/kg"),
+  card("Wobbe index",f"{result['fuel']['wobbe_MJ_Nm3']:.2f}","MJ/Nm³"),
+  card("Air flow",f"{result['combustion']['air_flow_kg_h']/1000:.2f}","t/h"),
+  card("Flue-gas flow",f"{result['combustion']['flue_flow_kg_h']/1000:.2f}","t/h"),
+  card("O₂, dry",f"{result['combustion']['dry_o2_pct']:.2f}","%"),
+  card("CO₂ from combustion",f"{result['combustion']['co2_formed_kg_h']/1000:.2f}","t/h"),
+  card("Average burner load",f"{result['firing']['average_burner_mw']:.3f}","MW/burner")
+ ],className="results-grid")
 
-def zone_figure(result,baseline_result):
-    zones=list('ABCDEF')
-    fig=go.Figure()
-    fig.add_trace(go.Bar(x=zones,y=baseline_result['firing']['zones_mw'],name='Baseline',marker_color=COLORS['slate']))
-    fig.add_trace(go.Bar(x=zones,y=result['firing']['zones_mw'],name='Current',marker_color=COLORS['blue']))
-    fig.update_layout(barmode='group')
-    fig.update_xaxes(title='Inlet firing zone')
-    fig.update_yaxes(title='Duty / MW')
-    return figure_layout(fig,'Six-zone inlet firing')
+def compare_view(before,current,hold,changed):
+ body=[]
+ for row in comparison_rows(before,current,hold,changed):
+  p=row["change_pct"]; txt="—" if p is None else f"{p:+.1f}%"
+  cls="change-flat" if p is None or abs(p)<1e-10 else ("change-up" if p>0 else "change-down")
+  body.append(html.Div([html.Div(row["label"],className="compare-name"),
+   html.Div(fmt(row["before"],row["unit"]),className="compare-value"),
+   html.Div("→",className="compare-arrow"),
+   html.Div(fmt(row["now"],row["unit"]),className="compare-value now"),
+   html.Div(row["unit"],className="compare-unit"),
+   html.Div(txt,className=f"compare-change {cls}")],className="compare-row"))
+ return html.Div(body,className="compare-body")
 
-def energy_figure(result):
-    t=result['thermal']
-    residual=max(t['residual_mw'],0)
-    fig=go.Figure(go.Sankey(
-        arrangement='snap',
-        node=dict(
-            pad=18,thickness=22,line=dict(color='white',width=1),
-            label=['Chemical input','Radiant duty','Convection duty','Residual'],
-            color=[COLORS['ink'],COLORS['blue'],COLORS['teal'],COLORS['slate']]
-        ),
-        link=dict(
-            source=[0,0,0],target=[1,2,3],
-            value=[t['radiant_mw'],t['convection_mw'],residual],
-            color=['rgba(31,111,133,.35)','rgba(43,125,112,.35)','rgba(138,162,173,.30)']
-        )
-    ))
-    return figure_layout(fig,'Static heat-accounting path')
+def hold_text(v):
+ return {"fired_duty":"Keeping fired duty constant","fuel_flow":"Keeping fuel flow constant",
+ "burner_dp":"Keeping burner pressure difference constant"}.get(v,"Keeping fired duty constant")
 
-def composition_figure(case):
-    comp=case['composition']
-    fig=go.Figure()
-    left=0
-    palette={'H2':'#2d8ca4','CH4':'#1f6f85','C2H6':'#2b7d70','N2':'#8aa2ad'}
-    for name in COMPONENTS:
-        fig.add_trace(go.Bar(
-            y=['Fuel'],x=[100*comp[name]],orientation='h',
-            name=name,marker_color=palette[name],
-            text=[f"{name} {100*comp[name]:.1f}%"],textposition='inside'
-        ))
-    fig.update_layout(barmode='stack')
-    fig.update_xaxes(title='Mole fraction / %',range=[0,100])
-    return figure_layout(fig,'Fuel composition')
-
-def split_figure(result):
-    f=result['firing']
-    fig=go.Figure(go.Pie(
-        labels=['Inlet','Outlet bottom','Outlet sidewall'],
-        values=[f['inlet_mw'],f['outlet_bottom_mw'],f['outlet_sidewall_mw']],
-        hole=.58,
-        marker=dict(colors=[COLORS['blue'],COLORS['teal'],COLORS['amber']]),
-        textinfo='label+percent'
-    ))
-    fig.update_layout(annotations=[dict(text=f"{sum([f['inlet_mw'],f['outlet_bottom_mw'],f['outlet_sidewall_mw']]):.0f} MW",x=.5,y=.5,font_size=18,showarrow=False)])
-    return figure_layout(fig,'Firing distribution')
-
-def comparison_table(current,baseline):
-    rows=[
-        ('Equivalent fuel / kg s⁻¹',baseline['fuel']['equivalent_fuel_kg_s'],current['fuel']['equivalent_fuel_kg_s']),
-        ('Mass LHV / MJ kg⁻¹',baseline['fuel']['lhv_MJ_kg'],current['fuel']['lhv_MJ_kg']),
-        ('Dry O₂ / %',baseline['combustion']['dry_o2_pct'],current['combustion']['dry_o2_pct']),
-        ('Radiant duty / MW',baseline['thermal']['radiant_mw'],current['thermal']['radiant_mw']),
-        ('Residual heat / MW',baseline['thermal']['residual_mw'],current['thermal']['residual_mw']),
-        ('Maximum zone / MW',baseline['firing']['max_zone_mw'],current['firing']['max_zone_mw']),
-        ('Steam demand / kg s⁻¹',baseline['process']['steam_demand_kg_s'],current['process']['steam_demand_kg_s'])
-    ]
-    return html.Table([
-        html.Thead(html.Tr([html.Th('Variable'),html.Th('Baseline'),html.Th('Current'),html.Th('Change')])),
-        html.Tbody([
-            html.Tr([
-                html.Td(name),html.Td(f'{b:.3f}'),html.Td(f'{c:.3f}'),
-                html.Td(f'{((c/b)-1)*100:+.2f}%' if abs(b)>1e-12 else '—')
-            ]) for name,b,c in rows
-        ])
-    ],className='compare-table')
-
-def guidance_panel(g):
-    def block(title,body):
-        if isinstance(body,list):
-            body=html.Ul([html.Li(x) for x in body])
-        else:
-            body=html.P(body)
-        return html.Div([html.H4(title),body],className='guidance-block')
-    d=g['deltas']
-    return [
-        html.Div([
-            html.Div('Engineering Guidance',className='guidance-title'),
-            html.Span('LIVE',className='basis-chip')
-        ],className='guidance-head'),
-        html.Div(g['change'],className='guidance-change'),
-        block('Why',g['why']),
-        block('Immediate consequence',g['effects']),
-        html.Div([
-            html.Div('Fuel demand',className='comp-name'),
-            html.Div(f"{d['fuel_flow_pct']:+.2f}%",className='comp-value'),
-            html.Div('vs baseline',className='small')
-        ],className='comp-cell'),
-        html.Div([
-            html.Div('Dry O₂',className='comp-name'),
-            html.Div(f"{d['dry_o2_delta_pctpt']:+.2f} pt",className='comp-value'),
-            html.Div('vs baseline',className='small')
-        ],className='comp-cell'),
-        block('Watch',g['watch']),
-        html.Div([
-            html.H4('Model basis'),
-            html.Div([html.Span(x,className='basis-chip') for x in g['basis']])
-        ],className='guidance-block'),
-        block('Not inferred',g['limits'])
-    ]
-
-def page_header(title,subtitle,basis='CALCULATED / SYNTHETIC'):
-    return html.Div([
-        html.Div([html.H2(title,className='study-title'),html.Div(subtitle,className='study-sub')]),
-        html.Span(basis,className='basis-chip')
-    ],className='study-header')
-
-def graph(fig):
-    return dcc.Graph(figure=fig,config=PLOT_CONFIG,style={'height':'390px'})
+def effect_figure(current,before,changed,response,hold):
+ d=response_sweep(current,before,changed,response,hold_constant=hold,points=81)
+ x=list(d["x"]); xb=float(d["x_before"]); xn=float(d["x_now"]); xt=d["input_label"]
+ if d["input_unit"]=="%": x=[100*v for v in x]; xb*=100; xn*=100
+ elif d["input_unit"]: xt+=f" ({d['input_unit']})"
+ fig=go.Figure()
+ fig.add_trace(go.Scatter(x=x,y=d["y"],mode="lines",line={"color":C["blue"],"width":4},
+  hovertemplate=f"{d['input_label']}: %{{x:.2f}}<br>{d['output_label']}: %{{y:.3f}} {d['output_unit']}<extra></extra>"))
+ fig.add_trace(go.Scatter(x=[xb],y=[d["y_before"]],mode="markers+text",text=["Before"],textposition="top center",
+  marker={"size":13,"color":C["before"],"symbol":"diamond","line":{"width":2,"color":C["text"]}}))
+ fig.add_trace(go.Scatter(x=[xn],y=[d["y_now"]],mode="markers+text",text=["Now"],textposition="bottom center",
+  marker={"size":15,"color":C["amber"],"line":{"width":2,"color":C["text"]}}))
+ if d.get("low_load_boundary") is not None:
+  fig.add_vrect(x0=min(x),x1=d["low_load_boundary"],fillcolor=C["yellow"],opacity=.08,line_width=0,
+   annotation_text="Low-load range",annotation_position="top left")
+ fig.update_layout(margin={"l":62,"r":24,"t":54,"b":58},paper_bgcolor=C["panel"],plot_bgcolor=C["panel"],
+  font={"color":C["text"],"family":"Inter, Segoe UI, sans-serif"},
+  title={"text":f"{d['output_label']} as {d['input_label'].lower()} changes","x":.01,"xanchor":"left","font":{"size":19}},
+  xaxis={"title":xt,"gridcolor":C["line"],"zeroline":False},
+  yaxis={"title":f"{d['output_label']} ({d['output_unit']})","gridcolor":C["line"],"zeroline":False},
+  showlegend=False,hovermode="x unified",uirevision=f"{changed}-{response}")
+ return fig,d
 
 app.layout=html.Div([
-    dcc.Store(id='composition-store',data=deepcopy(BASE_CASE['composition'])),
-    dcc.Store(id='fuel-last-change',data='H2'),
-    dcc.Store(id='current-store',data=deepcopy(BASE_CASE)),
-    dcc.Store(id='baseline-store',data=deepcopy(BASE_CASE)),
-    dcc.Store(id='last-changed-store',data='duty_mw'),
-    dcc.Store(id='saved-cases',data=[]),
+ dcc.Store(id="current-store",data=deepcopy(DEFAULT_CASE)),
+ dcc.Store(id="before-store",data=deepcopy(DEFAULT_CASE)),
+ dcc.Store(id="changed-store",data="H2"),
+ html.Header([
+  html.Div([html.Div("Pyrolysis Furnace Intelligence",className="brand-title"),
+   html.Div("Combustion Workbench",className="brand-subtitle")]),
+  html.Div([html.Div("Operating case",className="top-label"),
+   dcc.RadioItems(id="operating-case",options=[
+    {"label":"Start of run","value":"start_of_run"},{"label":"End of run","value":"end_of_run"}],
+    value="start_of_run",inline=True,className="top-radio")],className="top-case"),
+  html.Div([html.Button("Why did this happen?",id="why-open",className="btn secondary",n_clicks=0),
+   html.Button("Reset",id="reset",className="btn",n_clicks=0)],className="top-actions")
+ ],className="topbar"),
+ html.Main([
+  html.Section([
+   html.Div("Inputs",className="section-title"),
+   html.Div("Process",className="mini-title"),
+   html.Label("Feed rate",className="input-label"),
+   html.Div([dcc.Input(id="feed",type="number",value=8.0,min=1,max=12,step=.1,debounce=True),html.Span("kg/s")],className="input-line"),
+   html.Label("Steam / feed",className="input-label"),
+   html.Div([dcc.Input(id="steam-ratio",type="number",value=.30,min=0,max=1,step=.01,debounce=True),html.Span("kg/kg")],className="input-line"),
+   html.Div("Fuel composition",className="mini-title"),
+   html.Div(id="composition-view"),
+   html.Div([
+    html.Div([html.Label("Change",className="input-label"),
+     dcc.Dropdown(id="fuel-component",options=[{"label":FUEL_INPUTS[k],"value":k} for k in COMPONENTS],value="H2",clearable=False)]),
+    html.Div([html.Label("To",className="input-label"),
+     html.Div([dcc.Input(id="fuel-target",type="number",value=80.0,min=0,max=100,step=.1),html.Span("%")],className="input-line compact")])
+   ],className="fuel-edit-grid"),
+   html.Label("Balance with",className="input-label"),
+   dcc.Dropdown(id="balance-component",options=[{"label":FUEL_INPUTS[k],"value":k} for k in COMPONENTS],value="CH4",clearable=False),
+   html.Button("Apply fuel change",id="fuel-apply",className="btn primary wide",n_clicks=0),
+   html.Div("Combustion",className="mini-title"),
+   html.Label("Excess air",className="input-label"),
+   html.Div([dcc.Input(id="excess-air",type="number",value=10.0,min=0,max=50,step=.5,debounce=True),html.Span("%")],className="input-line"),
+   html.Label("Bottom firing share",className="input-label"),
+   html.Div([dcc.Input(id="bottom-split",type="number",value=50.0,min=0,max=100,step=1,debounce=True),html.Span("%")],className="input-line"),
+   html.Div("When fuel changes",className="mini-title"),
+   dcc.RadioItems(id="hold-constant",options=[
+    {"label":"Keep fired duty constant","value":"fired_duty"},
+    {"label":"Keep fuel flow constant","value":"fuel_flow"},
+    {"label":"Keep burner pressure difference constant","value":"burner_dp"}],
+    value="fired_duty",className="hold-radio")
+  ],className="panel input-panel"),
+  html.Section([
+   html.Div([html.Div([html.Div("See the effect",className="section-title"),html.Div(id="graph-context",className="graph-context")]),
+    dcc.Dropdown(id="response-choice",clearable=False,className="response-dropdown")],className="graph-head"),
+   dcc.Graph(id="effect-graph",config={"displayModeBar":False,"responsive":True},className="effect-graph"),
+   html.Div([html.Div("Before",className="legend-pill before-pill"),html.Div("Now",className="legend-pill now-pill"),
+    html.Div("The curve is recalculated from the same combustion model used for the results.",className="graph-note")],className="graph-footer")
+  ],className="panel graph-panel"),
+  html.Section([
+   html.Div("Results",className="section-title"),html.Div(id="results-panel"),
+   html.Div([html.Div("Before → Now",className="section-title compare-title"),html.Div(id="before-now")],className="compare-section")
+  ],className="panel right-panel")
+ ],className="main-grid"),
+ html.Footer([html.Div(id="status-strip",className="status-left"),html.Div(id="interpretation-strip",className="interpretation")],className="bottom-strip"),
+ html.Div([html.Div([
+  html.Div([html.Div("Why did this happen?",className="modal-title"),html.Button("×",id="why-close",className="close-btn",n_clicks=0)],className="modal-head"),
+  html.Div(id="why-content",className="modal-content")],className="modal-card")],id="why-modal",className="modal-backdrop hidden")
+],className="app-shell")
 
-    html.Div([
-        html.Div([
-            html.Div('Pyrolysis Furnace Intelligence',className='brand-title'),
-            html.Div('Furnace Engineering Workbench',className='brand-subtitle')
-        ]),
-        html.Div([
-            html.Span('INTERACTIVE STUDY',className='badge ok'),
-            html.Span('SYNTHETIC PUBLIC MODEL',className='badge'),
-            html.Span('NO PLANT AUTHORITY',className='badge model')
-        ],className='status-row')
-    ],className='topbar'),
+@app.callback(Output("current-store","data"),Output("before-store","data"),Output("changed-store","data"),
+ Input("feed","value"),Input("steam-ratio","value"),Input("excess-air","value"),Input("bottom-split","value"),
+ Input("operating-case","value"),Input("fuel-apply","n_clicks"),Input("reset","n_clicks"),
+ State("fuel-component","value"),State("fuel-target","value"),State("balance-component","value"),State("current-store","data"),
+ prevent_initial_call=True)
+def update_case(feed,steam,ea,bottom,op,_apply,_reset,component,target,balance,current):
+ trig=ctx.triggered_id; old=deepcopy(current or DEFAULT_CASE)
+ if trig=="reset": return deepcopy(DEFAULT_CASE),deepcopy(DEFAULT_CASE),"H2"
+ new=deepcopy(old); changed="feed_kg_s"
+ if trig=="feed" and feed is not None: new["feed_kg_s"]=float(feed); changed="feed_kg_s"
+ elif trig=="steam-ratio" and steam is not None: new["steam_ratio"]=float(steam); changed="steam_ratio"
+ elif trig=="excess-air" and ea is not None: new["excess_air"]=float(ea)/100; changed="excess_air"
+ elif trig=="bottom-split" and bottom is not None: new["bottom_split"]=float(bottom)/100; changed="bottom_split"
+ elif trig=="operating-case": new["operating_case"]=op; changed="feed_kg_s"
+ elif trig=="fuel-apply" and component and target is not None:
+  new["balance_component"]=balance or "CH4"
+  new["composition"]=rebalance_composition(old["composition"],component,float(target)/100,new["balance_component"]); changed=component
+ else: return no_update,no_update,no_update
+ return new,old,changed
 
-    html.Div([
-        dcc.Tabs(
-            id='workspace-tab',value='overview',className='nav-tabs',
-            children=[
-                dcc.Tab(label='Furnace Overview',value='overview',className='tab',selected_className='tab--selected'),
-                dcc.Tab(label='Scenario Studio',value='scenario',className='tab',selected_className='tab--selected'),
-                dcc.Tab(label='Combustion',value='combustion',className='tab',selected_className='tab--selected'),
-                dcc.Tab(label='Thermal Performance',value='thermal',className='tab',selected_className='tab--selected'),
-                dcc.Tab(label='Firing & Zones',value='firing',className='tab',selected_className='tab--selected'),
-                dcc.Tab(label='Control Response',value='control',className='tab',selected_className='tab--selected'),
-                dcc.Tab(label='Sensitivity Lab',value='sensitivity',className='tab',selected_className='tab--selected'),
-                dcc.Tab(label='Case Comparison',value='compare',className='tab',selected_className='tab--selected'),
-                dcc.Tab(label='Model Limits',value='limits',className='tab',selected_className='tab--selected')
-            ]
-        )
-    ],className='nav-wrap'),
+@app.callback(Output("fuel-target","value"),Input("fuel-component","value"),State("current-store","data"))
+def sync_target(component,current):
+ if not component or not current: return no_update
+ return round(100*current["composition"].get(component,0),3)
 
-    html.Div([
-        html.Div([
-            html.Div([
-                html.Div('Study case',className='card-title'),
-                html.Div('Preset',className='control-label'),
-                dcc.Dropdown(id='preset-select',options=list(PRESETS),value='Baseline',clearable=False),
-                html.Div([
-                    html.Button('Load preset',id='load-preset',className='btn primary'),
-                    html.Button('Reset',id='reset-case',className='btn')
-                ],className='action-row'),
-                html.Div([
-                    html.Button('Set as baseline',id='set-baseline',className='btn'),
-                    html.Button('Save case',id='save-case',className='btn')
-                ],className='action-row'),
-                dcc.Input(id='case-name',placeholder='Case name',type='text',style={'width':'100%','marginTop':'8px'}),
-                html.Div(id='save-status',className='small',style={'marginTop':'6px'})
-            ],className='card'),
+@app.callback(Output("response-choice","options"),Output("response-choice","value"),Input("changed-store","data"))
+def response_options(changed):
+ key=changed if changed in RESPONSE_OPTIONS else "feed_kg_s"
+ return [{"label":OUTPUTS[x][0],"value":x} for x in RESPONSE_OPTIONS[key]],DEFAULT_RESPONSE[key]
 
-            html.Div([
-                html.Div('Operating conditions',className='card-title'),
-                html.Div('Chemical duty / MW',className='control-label'),
-                dcc.Slider(30,90,1,value=60,id='duty',tooltip={'placement':'bottom'}),
-                html.Div('Excess-air fraction',className='control-label'),
-                dcc.Slider(0,.40,.01,value=.15,id='excess-air',tooltip={'placement':'bottom'}),
-                html.Div('Furnace draft / Pa(g)',className='control-label'),
-                dcc.Slider(-100,0,5,value=-40,id='draft',tooltip={'placement':'bottom'}),
+@app.callback(Output("composition-view","children"),Output("effect-graph","figure"),Output("graph-context","children"),
+ Output("results-panel","children"),Output("before-now","children"),Output("status-strip","children"),
+ Output("interpretation-strip","children"),Output("why-content","children"),
+ Input("current-store","data"),Input("before-store","data"),Input("changed-store","data"),
+ Input("hold-constant","value"),Input("response-choice","value"))
+def render(current,before,changed,hold,response):
+ current=current or deepcopy(DEFAULT_CASE); before=before or deepcopy(DEFAULT_CASE)
+ changed=changed if changed in RESPONSE_OPTIONS else "feed_kg_s"
+ response=response if response in RESPONSE_OPTIONS[changed] else DEFAULT_RESPONSE[changed]
+ result=evaluate_case(current,before,hold,changed); fig,d=effect_figure(current,before,changed,response,hold)
+ explain=simple_explanation(changed,before,current,hold)
+ bx=d["x_before"]*100 if d["input_unit"]=="%" else d["x_before"]; nx=d["x_now"]*100 if d["input_unit"]=="%" else d["x_now"]
+ suffix="%" if d["input_unit"]=="%" else (" "+d["input_unit"] if d["input_unit"] else "")
+ context=html.Div([html.Span(f"Changed: {d['input_label']}",className="context-strong"),
+  html.Span(f"Before {bx:.2f}{suffix} → Now {nx:.2f}{suffix}"),
+  html.Span(hold_text(hold) if changed in COMPONENTS else "Other inputs held at their current values")],className="context-lines")
+ status=[PUBLIC_CASES[current["operating_case"]]["label"],result["status"]["text"]]
+ if result["status"]["burner_warning"]: status.append(result["status"]["burner_warning"])
+ path=[]
+ for i,item in enumerate(explain["path"]):
+  if i: path.append(html.Span("→",className="path-arrow"))
+  path.append(html.Span(item,className="path-step"))
+ why=html.Div([html.P(explain["short"],className="why-lead"),html.Div(path,className="cause-path"),
+  html.Div([html.Div("Key equations",className="modal-subtitle"),
+   html.Div("Fired duty = fuel flow × LHV",className="equation"),
+   html.Div("O₂ required = C + H/4 − O/2",className="equation"),
+   html.Div("Wobbe index = volumetric LHV / √specific gravity",className="equation"),
+   html.Div("Actual air = stoichiometric air × (1 + excess air)",className="equation")],className="equation-block"),
+  html.Div("This public workbench uses generalised teaching conditions. It does not calculate CFD flame shape, NOx, flashback limits, local tube heat flux or a calibrated draft-to-airflow curve.",className="limit-note")])
+ return composition_view(current),fig,context,results(result),compare_view(before,current,hold,changed),"  |  ".join(status),explain["short"],why
 
-                html.Div('Fuel composition',className='section-label'),
-                html.Div(id='composition-display',className='comp-grid'),
-                html.Div('Adjust component',className='control-label'),
-                dcc.Dropdown(id='fuel-component',options=[{'label':k,'value':k} for k in COMPONENTS],value='H2',clearable=False),
-                html.Div(id='selected-fuel-current',className='small',style={'marginTop':'5px'}),
-                html.Div('Target mole fraction',className='control-label'),
-                dcc.Slider(0,1,.01,value=.20,id='fuel-target',tooltip={'placement':'bottom'}),
-                dcc.Checklist(
-                    id='fuel-locks',
-                    options=[{'label':f'Lock {k}','value':k} for k in COMPONENTS],
-                    value=[],
-                    labelStyle={'display':'inline-block','fontSize':'11px','marginRight':'8px','marginTop':'6px'}
-                ),
-                html.Div(id='composition-note',className='small',style={'marginTop':'6px'}),
+@app.callback(Output("why-modal","className"),Input("why-open","n_clicks"),Input("why-close","n_clicks"),
+ State("why-modal","className"),prevent_initial_call=True)
+def toggle_why(_open,_close,_class):
+ return "modal-backdrop" if ctx.triggered_id=="why-open" else "modal-backdrop hidden"
 
-                html.Div('Heat distribution',className='section-label'),
-                html.Div('Useful heat recovery',className='control-label'),
-                dcc.Slider(.75,.98,.01,value=55/60,id='heat-recovery',tooltip={'placement':'bottom'}),
-                html.Div('Radiant share of useful heat',className='control-label'),
-                dcc.Slider(.35,.65,.01,value=27/55,id='radiant-share',tooltip={'placement':'bottom'}),
-
-                html.Div('Firing & process',className='section-label'),
-                html.Div('Inlet / outlet firing ratio',className='control-label'),
-                dcc.Slider(.5,3,.1,value=1.5,id='inout-ratio',tooltip={'placement':'bottom'}),
-                html.Div('Outlet bottom / side ratio',className='control-label'),
-                dcc.Slider(.25,4,.25,value=1,id='bottomside-ratio',tooltip={'placement':'bottom'}),
-                html.Div('Feed / kg s⁻¹',className='control-label'),
-                dcc.Slider(4,14,.5,value=8,id='feed',tooltip={'placement':'bottom'}),
-                html.Div('Steam / feed ratio',className='control-label'),
-                dcc.Slider(.1,.8,.05,value=.35,id='steam-ratio',tooltip={'placement':'bottom'}),
-                html.Div('Zone correction',className='control-label'),
-                dcc.Dropdown(id='zone-select',options=['None','A','B','C','D','E','F'],value='None',clearable=False),
-                dcc.Slider(-.05,.05,.005,value=0,id='zone-correction',tooltip={'placement':'bottom'}),
-                html.Div('Fuel-pressure authority',className='control-label'),
-                dcc.Dropdown(
-                    id='pressure-state',
-                    options=['Normal','Low-pressure constraint','High-pressure constraint'],
-                    value='Normal',clearable=False
-                )
-            ],className='card'),
-
-            html.Div([
-                html.Div('Scenario / analysis',className='card-title'),
-                html.Div('Scenario template',className='control-label'),
-                dcc.Dropdown(
-                    id='scenario-select',
-                    options=[{'label':v,'value':k} for k,v in SCENARIOS.items()],
-                    value='normal',clearable=False
-                ),
-                html.Div('Sensitivity input',className='control-label'),
-                dcc.Dropdown(
-                    id='sens-x',
-                    options=[{'label':v[0],'value':k} for k,v in INPUTS.items()],
-                    value='h2_fraction',clearable=False
-                ),
-                html.Div('Sensitivity output',className='control-label'),
-                dcc.Dropdown(id='sens-y',value='fuel_flow',clearable=False)
-            ],className='card')
-        ],className='left-rail'),
-
-        html.Div(id='page-content'),
-
-        html.Div([
-            html.Div(id='guidance-content',className='card')
-        ],className='guidance-rail')
-    ],className='workspace-grid')
-],className='workbench')
-
-@app.callback(
-    Output('composition-store','data',allow_duplicate=True),
-    Output('fuel-last-change','data'),
-    Output('composition-note','children'),
-    Input('fuel-target','value'),
-    State('fuel-component','value'),
-    State('fuel-locks','value'),
-    State('composition-store','data'),
-    prevent_initial_call=True
-)
-def adjust_fuel(target,component,locks,composition):
-    updated=rebalance_composition(composition,component,target,locks)
-    note=f"{component} set to {updated[component]:.3f}; unlocked components automatically renormalized to keep Σx = 1.000."
-    return updated,component,note
-
-@app.callback(
-    Output('composition-display','children'),
-    Output('selected-fuel-current','children'),
-    Input('composition-store','data'),
-    Input('fuel-component','value')
-)
-def show_composition(comp,selected):
-    cells=[
-        html.Div([
-            html.Div(k,className='comp-name'),
-            html.Div(f"{100*comp[k]:.1f}%",className='comp-value')
-        ],className='comp-cell') for k in COMPONENTS
-    ]
-    return cells,f"Current {selected} = {100*comp[selected]:.1f} mol%. Move the target slider to change it."
-
-@app.callback(
-    Output('composition-store','data'),
-    Output('duty','value'),
-    Output('excess-air','value'),
-    Output('draft','value'),
-    Output('heat-recovery','value'),
-    Output('radiant-share','value'),
-    Output('inout-ratio','value'),
-    Output('bottomside-ratio','value'),
-    Output('feed','value'),
-    Output('steam-ratio','value'),
-    Output('zone-select','value'),
-    Output('zone-correction','value'),
-    Output('pressure-state','value'),
-    Input('load-preset','n_clicks'),
-    Input('reset-case','n_clicks'),
-    State('preset-select','value'),
-    State('baseline-store','data'),
-    prevent_initial_call=True
-)
-def load_or_reset(_load,_reset,preset,baseline):
-    selected=deepcopy(PRESETS[preset] if ctx.triggered_id=='load-preset' else baseline)
-    return (
-        selected['composition'],selected['duty_mw'],selected['excess_air'],selected['draft_pa'],
-        selected['heat_recovery'],selected['radiant_share'],selected['inlet_outlet_ratio'],
-        selected['bottom_side_ratio'],selected['feed_kg_s'],selected['steam_ratio'],
-        selected['zone'],selected['zone_correction'],selected['pressure_state']
-    )
-
-@app.callback(
-    Output('current-store','data'),
-    Output('last-changed-store','data'),
-    Input('composition-store','data'),
-    Input('fuel-last-change','data'),
-    Input('duty','value'),
-    Input('excess-air','value'),
-    Input('draft','value'),
-    Input('heat-recovery','value'),
-    Input('radiant-share','value'),
-    Input('inout-ratio','value'),
-    Input('bottomside-ratio','value'),
-    Input('feed','value'),
-    Input('steam-ratio','value'),
-    Input('zone-select','value'),
-    Input('zone-correction','value'),
-    Input('pressure-state','value')
-)
-def build_case(comp,fuel_last,duty,excess,draft,recovery,rad_share,inout,bottomside,feed,steam,zone,correction,pressure):
-    current={
-        'duty_mw':float(duty),'composition':comp,'excess_air':float(excess),'draft_pa':float(draft),
-        'heat_recovery':float(recovery),'radiant_share':float(rad_share),
-        'inlet_outlet_ratio':float(inout),'bottom_side_ratio':float(bottomside),
-        'feed_kg_s':float(feed),'steam_ratio':float(steam),'zone':zone,
-        'zone_correction':float(correction),'pressure_state':pressure
-    }
-    trigger=ctx.triggered_id
-    mapping={
-        'duty':'duty_mw','excess-air':'excess_air','draft':'draft_pa',
-        'heat-recovery':'heat_recovery','radiant-share':'radiant_share',
-        'inout-ratio':'inlet_outlet_ratio','bottomside-ratio':'bottom_side_ratio',
-        'feed':'feed_kg_s','steam-ratio':'steam_ratio','zone-select':'zone',
-        'zone-correction':'zone_correction','pressure-state':'pressure_state'
-    }
-    if trigger in ('composition-store','fuel-last-change'):
-        last=fuel_last or 'H2'
-    else:
-        last=mapping.get(trigger,'duty_mw')
-    return current,last
-
-@app.callback(
-    Output('baseline-store','data'),
-    Input('set-baseline','n_clicks'),
-    State('current-store','data'),
-    prevent_initial_call=True
-)
-def set_baseline(_n,current):
-    return deepcopy(current)
-
-@app.callback(
-    Output('saved-cases','data'),
-    Output('save-status','children'),
-    Input('save-case','n_clicks'),
-    State('case-name','value'),
-    State('current-store','data'),
-    State('saved-cases','data'),
-    prevent_initial_call=True
-)
-def save_case(_n,name,current,saved):
-    saved=list(saved or [])
-    label=(name or f'Case {len(saved)+1}').strip()
-    saved.append({'name':label,'case':deepcopy(current)})
-    return saved[-8:],f"Saved “{label}” for comparison."
-
-@app.callback(
-    Output('sens-y','options'),
-    Output('sens-y','value'),
-    Input('sens-x','value'),
-    State('sens-y','value')
-)
-def sensitivity_outputs(x,current):
-    choices=SUPPORTED[x]
-    options=[{'label':OUTPUTS[k][0],'value':k} for k in choices]
-    return options,current if current in choices else DEFAULT_OUTPUT[x]
-
-@app.callback(
-    Output('guidance-content','children'),
-    Input('current-store','data'),
-    Input('baseline-store','data'),
-    Input('last-changed-store','data')
-)
-def render_guidance(current,baseline,last):
-    return guidance_panel(guidance(last,current,baseline))
-
-@app.callback(
-    Output('page-content','children'),
-    Input('workspace-tab','value'),
-    Input('current-store','data'),
-    Input('baseline-store','data'),
-    Input('last-changed-store','data'),
-    Input('scenario-select','value'),
-    Input('sens-x','value'),
-    Input('sens-y','value'),
-    Input('saved-cases','data')
-)
-def render_page(tab,current,baseline,last,scenario_name,sens_x,sens_y,saved):
-    result=evaluate_case(current);base=evaluate_case(baseline)
-    fuel_delta=100*(result['fuel']['equivalent_fuel_kg_s']/base['fuel']['equivalent_fuel_kg_s']-1)
-    o2_delta=result['combustion']['dry_o2_pct']-base['combustion']['dry_o2_pct']
-    zone_delta=100*(result['firing']['max_zone_mw']/base['firing']['max_zone_mw']-1)
-    steam_delta=100*(result['process']['steam_demand_kg_s']/base['process']['steam_demand_kg_s']-1)
-
-    if tab=='overview':
-        default_x=LAST_TO_SENS.get(last,'chemical_duty')
-        default_y=DEFAULT_OUTPUT[default_x]
-        sf,_=sensitivity_figure(default_x,default_y,current,baseline,'Response to the parameter you changed')
-        return html.Div([
-            page_header('Furnace Overview','One-screen operating study: current state, baseline deviation, sensitivity and firing distribution.'),
-            html.Div([
-                kpi('Equivalent fuel',f"{result['fuel']['equivalent_fuel_kg_s']:.3f} kg/s",fuel_delta),
-                kpi('Dry O₂',f"{result['combustion']['dry_o2_pct']:.2f}%",f"{o2_delta:+.2f} percentage points"),
-                kpi('Mass LHV',f"{result['fuel']['lhv_MJ_kg']:.2f} MJ/kg"),
-                kpi('Heat recovery',f"{result['thermal']['accounting_efficiency_pct']:.1f}%"),
-                kpi('Max zone duty',f"{result['firing']['max_zone_mw']:.2f} MW",zone_delta),
-                kpi('Steam demand',f"{result['process']['steam_demand_kg_s']:.2f} kg/s",steam_delta)
-            ],className='kpi-grid'),
-            html.Div([
-                html.Div([graph(sf)],className='chart-card'),
-                html.Div([graph(zone_figure(result,base))],className='chart-card')
-            ],className='two-col'),
-            html.Div([
-                html.Div([graph(energy_figure(result))],className='chart-card'),
-                html.Div([
-                    html.Div('Baseline → current',className='panel-title'),
-                    html.Div('Every study stays anchored to a comparison state.',className='panel-subtitle'),
-                    comparison_table(result,base)
-                ],className='chart-card')
-            ],className='two-col')
-        ])
-
-    if tab=='combustion':
-        fuel_input={'H2':'h2_fraction','CH4':'ch4_fraction','C2H6':'c2h6_fraction','N2':'n2_fraction'}.get(last,'h2_fraction')
-        fig1,_=sensitivity_figure(fuel_input,'fuel_flow',current,baseline,'Fuel composition → equivalent fuel demand')
-        fig2,_=sensitivity_figure(fuel_input,'wobbe',current,baseline,'Fuel composition → lower Wobbe')
-        fig3,_=sensitivity_figure('excess_air','dry_o2',current,baseline,'Excess air → dry product O₂')
-        return html.Div([
-            page_header('Combustion','Explore mixture energy, oxygen requirement and air demand without manually balancing mole fractions.'),
-            html.Div([
-                kpi('Mass LHV',f"{result['fuel']['lhv_MJ_kg']:.2f} MJ/kg"),
-                kpi('Lower Wobbe',f"{result['fuel']['wobbe_MJ_Nm3']:.2f} MJ/Nm³"),
-                kpi('Equivalent fuel',f"{result['fuel']['equivalent_fuel_kg_s']:.3f} kg/s",fuel_delta),
-                kpi('Stoich. air',f"{result['combustion']['stoich_air_mol_mol']:.3f} mol/mol"),
-                kpi('Actual air',f"{result['combustion']['actual_air_mol_mol']:.3f} mol/mol"),
-                kpi('Dry O₂',f"{result['combustion']['dry_o2_pct']:.2f}%")
-            ],className='kpi-grid'),
-            html.Div([
-                html.Div([graph(composition_figure(current))],className='chart-card'),
-                html.Div([graph(fig1)],className='chart-card')
-            ],className='two-col'),
-            html.Div([
-                html.Div([graph(fig2)],className='chart-card'),
-                html.Div([graph(fig3)],className='chart-card')
-            ],className='two-col'),
-            html.Div('Fuel fractions are always closed to 100% by proportional renormalization of unlocked components. Flame speed, flashback, NOx and burner-stability limits remain qualitative.',className='callout')
-        ])
-
-    if tab=='thermal':
-        fig1,_=sensitivity_figure('heat_recovery','residual_heat',current,baseline,'Heat recovery → residual heat')
-        fig2,_=sensitivity_figure('radiant_share','radiant_duty',current,baseline,'Radiant share → radiant duty')
-        return html.Div([
-            page_header('Thermal Performance','Static heat accounting with physically consistent useful-duty partition.'),
-            html.Div([
-                kpi('Chemical input',f"{current['duty_mw']:.1f} MW"),
-                kpi('Useful duty',f"{result['thermal']['radiant_mw']+result['thermal']['convection_mw']:.2f} MW"),
-                kpi('Radiant',f"{result['thermal']['radiant_mw']:.2f} MW"),
-                kpi('Convection',f"{result['thermal']['convection_mw']:.2f} MW"),
-                kpi('Residual',f"{result['thermal']['residual_mw']:.2f} MW"),
-                kpi('Accounting η',f"{result['thermal']['accounting_efficiency_pct']:.2f}%")
-            ],className='kpi-grid'),
-            html.Div([
-                html.Div([graph(energy_figure(result))],className='chart-card'),
-                html.Div([graph(fig1)],className='chart-card')
-            ],className='two-col'),
-            html.Div([graph(fig2)],className='chart-card'),
-            html.Div('The thermal model is an accounting model, not an off-design radiation/convection solver. COT, tube-metal temperature, local flux and cracking kinetics are not inferred.',className='callout warn')
-        ])
-
-    if tab=='firing':
-        fig1,_=sensitivity_figure('inlet_outlet_ratio','inlet_firing',current,baseline,'Inlet/outlet split → inlet firing')
-        fig2,_=sensitivity_figure('zone_correction','max_zone',current,baseline,'Zone correction → maximum zone duty')
-        return html.Div([
-            page_header('Firing & Zones','Conserved allocation across inlet zones and outlet burner groups.'),
-            html.Div([
-                kpi('Total firing',f"{current['duty_mw']:.1f} MW"),
-                kpi('Inlet firing',f"{result['firing']['inlet_mw']:.2f} MW"),
-                kpi('Outlet firing',f"{result['firing']['outlet_mw']:.2f} MW"),
-                kpi('Max zone',f"{result['firing']['max_zone_mw']:.2f} MW",zone_delta),
-                kpi('Bottom burner',f"{result['firing']['bottom_burner_mw']:.2f} MW"),
-                kpi('Conservation',f"{result['firing']['conservation_residual_w']:.1e} W")
-            ],className='kpi-grid'),
-            html.Div([
-                html.Div([graph(zone_figure(result,base))],className='chart-card'),
-                html.Div([graph(split_figure(result))],className='chart-card')
-            ],className='two-col'),
-            html.Div([
-                html.Div([graph(fig1)],className='chart-card'),
-                html.Div([graph(fig2)],className='chart-card')
-            ],className='two-col'),
-            html.Div('The selected zone correction is explicit. Temperature error does not automatically generate a numerical firing increment because no identified temperature-to-firing process gain is available.',className='callout')
-        ])
-
-    if tab=='control':
-        draft_air,_=sensitivity_figure('draft_pressure','relative_airflow',current,baseline,'Draft → relative airflow teaching model')
-        draft_ex,_=sensitivity_figure('draft_pressure','implied_excess_air',current,baseline,'Draft → implied excess-air teaching model')
-        auth=result['control']['active_authority']
-        return html.Div([
-            page_header('Control Response','Functional authority and inspectable control consequences without pretending to be a plant DCS.','FUNCTIONAL / MODELLED'),
-            html.Div([
-                kpi('Active authority',auth.replace('_',' ')),
-                kpi('Draft input',f"{current['draft_pa']:.0f} Pa(g)"),
-                kpi('Relative airflow model',f"{result['draft_model']['relative_airflow']:.3f} × ref"),
-                kpi('Implied excess air',f"{100*result['draft_model']['implied_excess_air']:.1f}%"),
-                kpi('Inlet/outlet ratio',f"{current['inlet_outlet_ratio']:.2f}"),
-                kpi('Bottom/side ratio',f"{current['bottom_side_ratio']:.2f}")
-            ],className='kpi-grid'),
-            html.Div([
-                html.Div([graph(draft_air)],className='chart-card'),
-                html.Div([graph(draft_ex)],className='chart-card')
-            ],className='two-col'),
-            html.Div([
-                html.Div([
-                    html.Div('Authority interpretation',className='panel-title'),
-                    html.P('Normal fuel-demand authority is superseded when the selected teaching pressure constraint is active. This is a functional authority model only.'),
-                    html.Div(f"CURRENT AUTHORITY: {auth}",className='guidance-change')
-                ],className='chart-card'),
-                html.Div([
-                    html.Div('Draft model boundary',className='panel-title'),
-                    html.P(result['draft_model']['basis']),
-                    html.Div('Real air admission also depends on burner/register position, leakage paths, density and system resistance. The curve is intentionally not presented as plant calibration.',className='callout warn')
-                ],className='chart-card')
-            ],className='two-col')
-        ])
-
-    if tab=='scenario':
-        state=run_scenario(scenario_name)
-        allocation=state['allocation']['value']
-        cards=[
-            kpi('Scenario',SCENARIOS[scenario_name]),
-            kpi('Operating state',state['operating_state'].replace('_',' ')),
-            kpi('Authority',state['active_authority'].replace('_',' ')),
-            kpi('Fuel case',state['fuel_case'].replace('_',' ')),
-            kpi('Steam demand',f"{state['steam_base_demand']['value']:.2f} kg/s"),
-            kpi('Pass balance',state['pass_classification'].replace('_',' '))
-        ]
-        fig=go.Figure()
-        if allocation:
-            fig.add_trace(go.Bar(x=list('ABCDEF'),y=[v/1e6 for v in allocation['zones']],marker_color=COLORS['blue']))
-            fig.update_yaxes(title='Zone duty / MW');fig.update_xaxes(title='Zone')
-        figure_layout(fig,'Scenario firing snapshot')
-        return html.Div([
-            page_header('Scenario Studio','Start from a named disturbance instead of building every study manually.'),
-            html.Div(cards,className='kpi-grid'),
-            html.Div([
-                html.Div([
-                    html.Div('Engineering interpretation',className='panel-title'),
-                    *[html.Div(line,className='callout' if i==0 else 'guidance-block') for i,line in enumerate(explain(state))]
-                ],className='chart-card'),
-                html.Div([graph(fig)] if allocation else [html.Div('Firing allocation is intentionally unavailable in this shutdown teaching state.',className='callout limit')],className='chart-card')
-            ],className='two-col'),
-            html.Div('Scenario Studio uses thirteen bounded static teaching events. It does not integrate time or predict controller trajectories.',className='callout warn')
-        ])
-
-    if tab=='sensitivity':
-        fig,data=sensitivity_figure(sens_x,sens_y,current,baseline)
-        return html.Div([
-            page_header('Sensitivity Lab','Choose any supported input/output pair and inspect the full response curve, current point and baseline.'),
-            html.Div([graph(fig)],className='chart-card'),
-            html.Div([
-                html.Div([
-                    html.Div('Engineering basis',className='panel-title'),
-                    html.Div(data['basis'],className='guidance-change'),
-                    html.P(data['note'] or 'All other declared case inputs are held at their current values during this one-factor sweep.')
-                ],className='chart-card'),
-                html.Div([
-                    html.Div('How to read the curve',className='panel-title'),
-                    html.P('The blue line is a one-factor sensitivity sweep. The orange point is the current case. The grey diamond is the baseline. It is not a time trend unless the x-axis is time, and this release contains no time integration.')
-                ],className='chart-card')
-            ],className='two-col')
-        ])
-
-    if tab=='compare':
-        cases=[{'name':'Baseline','case':baseline},{'name':'Current','case':current}]+list(saved or [])
-        evaluated=[(item['name'],evaluate_case(item['case'])) for item in cases]
-        names=[x[0] for x in evaluated]
-        fig=go.Figure()
-        for label,path in [
-            ('Fuel kg/s',('fuel','equivalent_fuel_kg_s')),
-            ('Dry O₂ %',('combustion','dry_o2_pct')),
-            ('Max zone MW',('firing','max_zone_mw')),
-            ('Steam kg/s',('process','steam_demand_kg_s'))
-        ]:
-            vals=[r[path[0]][path[1]] for _,r in evaluated]
-            fig.add_trace(go.Scatter(x=names,y=vals,mode='lines+markers',name=label))
-        figure_layout(fig,'Saved-study comparison')
-        table_rows=[]
-        for name,r in evaluated:
-            table_rows.append(html.Tr([
-                html.Td(name),
-                html.Td(f"{r['fuel']['equivalent_fuel_kg_s']:.3f}"),
-                html.Td(f"{r['combustion']['dry_o2_pct']:.2f}"),
-                html.Td(f"{r['thermal']['accounting_efficiency_pct']:.2f}"),
-                html.Td(f"{r['firing']['max_zone_mw']:.2f}"),
-                html.Td(f"{r['process']['steam_demand_kg_s']:.2f}"),
-                html.Td(r['control']['active_authority'].replace('_',' '))
-            ]))
-        table=html.Table([
-            html.Thead(html.Tr([html.Th(x) for x in ['Case','Fuel kg/s','Dry O₂ %','η %','Max zone MW','Steam kg/s','Authority']])),
-            html.Tbody(table_rows)
-        ],className='compare-table')
-        return html.Div([
-            page_header('Case Comparison','Save operating studies and compare consequences without losing the baseline.'),
-            html.Div([graph(fig)],className='chart-card'),
-            html.Div([table],className='chart-card'),
-            html.Div('Use “Save case” in the left study panel after each investigation. Up to eight saved studies are retained in the current browser session.',className='callout')
-        ])
-
-    supported=[
-        'Ideal complete combustion for declared H₂ / CH₄ / C₂H₆ / N₂ mixtures',
-        'Mass LHV, normal-volume LHV and lower Wobbe teaching calculations',
-        'Stoichiometric/actual air and wet/dry product O₂',
-        'Static heat accounting with conserved useful-duty partition',
-        'Conserved inlet/outlet, bottom/sidewall and six-zone firing allocation',
-        'Feed/steam base-demand relationship',
-        'Functional fuel-pressure authority states',
-        'One-factor sensitivity sweeps for supported relationships',
-        'Fixed-resistance draft relative-airflow teaching correlation',
-        'Thirteen static scenario templates and deterministic engineering guidance'
-    ]
-    unavailable=[
-        'CFD, local flame shape or local flame temperature',
-        'Flame speed, flashback boundary, CO or NOx prediction',
-        'Rigorous cracking yield or coking kinetics',
-        'Tube-metal temperature, tube life or local radiant flux',
-        'Identified furnace time constants or dynamic COT response',
-        'Numerical PID tuning, valve characteristic or external-reset dynamics',
-        'Calibrated ID-fan curve, register position or leakage-air model',
-        'Plant trip, permissive, shutdown or safe-to-continue determination',
-        'Plant-validated APC, optimization or autonomous AI control'
-    ]
-    return html.Div([
-        page_header('Model Limits','A strong engineering tool must make its evidence boundary as visible as its calculations.','EXPLICIT BOUNDARIES'),
-        html.Div([
-            html.Div([
-                html.Div('Supported',className='panel-title'),
-                html.Ul([html.Li(x) for x in supported])
-            ],className='chart-card'),
-            html.Div([
-                html.Div('Not claimed',className='panel-title'),
-                html.Ul([html.Li(x) for x in unavailable])
-            ],className='chart-card')
-        ],className='two-col'),
-        html.Div('The draft sensitivity is explicitly a fixed-resistance teaching correlation, not plant calibration. Qualitative guidance may point to physical consequences that the numerical engine does not calculate.',className='callout warn')
-    ])
-
-if __name__=='__main__':
-    app.run(host='0.0.0.0',port=int(os.environ.get('PORT','8050')),debug=False)
+if __name__=="__main__":
+ app.run(host="0.0.0.0",port=int(os.environ.get("PORT","8050")),debug=False)
