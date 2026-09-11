@@ -145,3 +145,51 @@ def test_fuel_component_can_drive_thermal_response_curve():
     assert sweep["input_label"] == "Hydrogen"
     assert sweep["input_unit"] == "%"
     assert sweep["y"][0] != pytest.approx(sweep["y"][-1])
+
+
+def test_thermal_layer_preserves_constant_fuel_flow_fuel_study():
+    before = deepcopy(DEFAULT_CASE)
+    now = deepcopy(DEFAULT_CASE)
+    now["composition"] = rebalance_composition(
+        before["composition"],
+        "H2",
+        0.30,
+        "CH4",
+    )
+    base = evaluate_thermal(before, DEFAULT_THERMAL_SETTINGS)
+    changed = evaluate_thermal(
+        now,
+        DEFAULT_THERMAL_SETTINGS,
+        before_combustion_case=before,
+        hold_constant="fuel_flow",
+        combustion_changed_input="H2",
+    )
+    assert changed["combustion"]["fuel"]["fuel_flow_kg_h"] == pytest.approx(
+        base["combustion"]["fuel"]["fuel_flow_kg_h"]
+    )
+    assert changed["energy"]["fired_duty_mw"] != pytest.approx(
+        base["energy"]["fired_duty_mw"]
+    )
+
+
+def test_thermal_sweep_preserves_constant_fuel_flow_basis_for_fuel_component():
+    before = deepcopy(DEFAULT_CASE)
+    now = deepcopy(DEFAULT_CASE)
+    now["composition"] = rebalance_composition(
+        before["composition"],
+        "H2",
+        0.50,
+        "CH4",
+    )
+    sweep = thermal_sweep(
+        now,
+        DEFAULT_THERMAL_SETTINGS,
+        "H2",
+        "overall_efficiency",
+        points=31,
+        before_combustion_case=before,
+        hold_constant="fuel_flow",
+        active_combustion_change="H2",
+    )
+    assert len(sweep["x"]) == 31
+    assert len(sweep["y"]) == 31
