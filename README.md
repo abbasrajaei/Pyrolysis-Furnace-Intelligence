@@ -1,6 +1,6 @@
 # Pyrolysis Furnace Intelligence
 
-## Combustion Workbench
+## Combustion and Heat-Transfer Workbench
 
 I built this project to connect the combustion equations we learn as engineers with the way a real industrial furnace behaves.
 
@@ -15,6 +15,8 @@ But in an industrial furnace, changing one variable can affect many others. Fuel
 The purpose of this workbench is simple:
 
 > **Change one combustion or furnace parameter and immediately see what else changes, how much it changes, and why.**
+
+The software is now organised in two connected layers: **Combustion** and **Heat transfer**. The combustion layer determines fired duty, fuel demand, air and flue gas. The heat-transfer layer then uses that result to show where the fired heat goes and how furnace efficiency changes.
 
 The public model uses generalised teaching conditions. It is not a plant digital twin, burner-design package, CFD model, BMS, APC replacement or safety system.
 
@@ -334,7 +336,11 @@ That is why combustion optimisation connects directly with:
 \text{Run length}
 \]
 
-The current public combustion workbench does not claim to predict local tube-metal temperature or coking rate. Those belong to a later heat-transfer/process layer.
+![Public teaching furnace heat balance](assets/heat_balance.svg)
+
+*The public heat-transfer model separates radiant absorption, convection recovery, stack loss and other heat loss so that efficiency changes can be understood rather than hidden inside a residual.*
+
+The current heat-transfer layer calculates overall heat recovery, radiant and convection duty, stack loss, average and peak teaching heat flux, and the effect of combustion changes on thermal efficiency. It still does not claim to predict local tube-metal temperature or coking rate.
 
 ---
 
@@ -477,7 +483,7 @@ Fuel composition, fuel flow, Wobbe index, fired duty, excess oxygen, air flow, f
 
 I wanted a tool where I could change one of these variables and immediately see those connections.
 
-The result is this **Combustion Workbench**.
+The result is this **Furnace Engineering Workbench**, with connected Combustion and Heat Transfer modules.
 
 The engineering approach is informed by my experience with real industrial cracking-furnace systems, including Technip-designed furnace architecture, but the public implementation is independently authored and uses generalised teaching conditions.
 
@@ -485,9 +491,11 @@ The engineering approach is informed by my experience with real industrial crack
 
 ## How to use the workbench
 
-The first screen is designed as one horizontal engineering workspace.
+The application is designed as a horizontal engineering workspace so the important inputs, response graph and results remain visible together.
 
-There are three main areas.
+Use the module selector at the top to move between **Combustion** and **Heat transfer**.
+
+The Combustion module has three main areas.
 
 ### Inputs
 
@@ -545,6 +553,30 @@ for the main combustion quantities.
 
 A **Why did this happen?** button opens a second layer showing the physical path and equations behind the change.
 
+### Heat transfer
+
+The Heat Transfer module takes the current fired duty and flue-gas result directly from the Combustion module.
+
+It then lets me study:
+
+- stack gas temperature;
+- other heat loss;
+- radiant share of fired duty.
+
+The module closes the energy balance as:
+
+\[
+Q_{fired}=Q_{radiant}+Q_{convection}+Q_{stack}+Q_{other}
+\]
+
+and calculates overall furnace efficiency, useful heat, radiant heat absorbed, convection heat recovered, stack heat loss, box efficiency, average and peak teaching radiant heat flux, and the approximate duty recovered in each convection-bank group.
+
+The Heat Transfer response graph follows the same rule as the combustion graph: each square is recalculated from the engineering model, and **Before → Now** shows the exact numerical consequence of a change.
+
+Because the two modules are connected, a combustion change such as excess air, feed rate or fuel composition can also be followed into stack loss and overall thermal efficiency.
+
+A separate methodology note explains the equations and model limits in `docs/heat_transfer_methodology.md`.
+
 ---
 
 ## What the current model calculates
@@ -567,7 +599,12 @@ The current combustion layer calculates:
 - CO₂ formed by combustion;
 - CO₂ intensity per MWh fired;
 - average, bottom and sidewall burner loading;
-- low-load and burner-loading warnings.
+- low-load and burner-loading warnings;
+- stack sensible-heat loss;
+- overall and box efficiency;
+- useful, radiant and convection duty;
+- average and peak teaching radiant heat flux;
+- public convection-bank heat-recovery distribution.
 
 ---
 
@@ -673,8 +710,8 @@ http://127.0.0.1:8050
 ## Repository structure
 
 ~~~text
-app/        Dash combustion workbench and interface styling
-src/        Combustion, furnace and supporting engineering calculations
+app/        Dash furnace engineering workbench and interface styling
+src/        Combustion, heat-transfer, furnace and supporting engineering calculations
 data/       Public teaching inputs
 tests/      Engineering and application tests
 examples/   Example engineering calculations
