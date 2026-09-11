@@ -6,9 +6,9 @@ I built this project to connect the combustion equations we learn as engineers w
 
 Combustion looks simple on paper:
 
-$
+$$
 \text{Fuel} + \text{Oxygen} \rightarrow \text{Products} + \text{Heat}
-$
+$$
 
 But in an industrial furnace, changing one variable can affect many others. Fuel composition changes heating value, density, Wobbe index, oxygen demand and emissions. Excess air changes flue-gas flow and stack losses. Firing changes burner loading and heat transfer. Process load changes how much heat the furnace must supply.
 
@@ -58,7 +58,7 @@ This is the engineering problem I wanted to explore.
 
 A fired furnace can be simplified as:
 
-$
+$$
 \text{Fuel + Air}
 \rightarrow
 \text{Combustion}
@@ -68,16 +68,16 @@ $
 \text{Radiation + Convection}
 \rightarrow
 \text{Process}
-$
+$$
 
 But the variables are coupled.
 
 For example:
 
-$
+$$
 \text{Fuel composition}
 \rightarrow
-LHV,\;MW,\;Wobbe
+LHV,\;MW,\;WI
 \rightarrow
 \text{Fuel flow}
 \rightarrow
@@ -87,8 +87,8 @@ LHV,\;MW,\;Wobbe
 \rightarrow
 \text{Flue gas}
 \rightarrow
-\text{CO}_2
-$
+CO_2
+$$
 
 The software is built around these relationships rather than around isolated calculations.
 
@@ -110,17 +110,17 @@ Hydrogen, methane, ethane, ethylene, propane and carbon monoxide have different:
 
 For a mixture:
 
-$
+$$
 MW_{fuel}=\sum_i x_i MW_i
-$
+$$
 
 where $x_i$ is the mole fraction of each component.
 
 The workbench supports:
 
-$
+$$
 H_2,\ CH_4,\ C_2H_4,\ C_2H_6,\ C_3H_8,\ CO,\ CO_2,\ N_2
-$
+$$
 
 Fuel composition is always closed to 100%. When I change one component, I can select another component to act as the balance.
 
@@ -136,17 +136,17 @@ That makes it possible to study questions such as:
 
 For fixed fuel composition, chemical heat release is approximately:
 
-$
+$$
 Q_{fired}=\dot m_{fuel}\,LHV
-$
+$$
 
 Therefore, if the process heat requirement stays constant:
 
-$
+$$
 \boxed{
 \dot m_{fuel}=\frac{Q_{required}}{LHV}
 }
-$
+$$
 
 This is one reason fuel flow alone is not enough to describe furnace firing.
 
@@ -164,11 +164,11 @@ Gas density also changes.
 
 A useful fuel-interchangeability parameter is the Wobbe Index:
 
-$
+$$
 \boxed{
 WI=\frac{HV_v}{\sqrt{SG}}
 }
-$
+$$
 
 where:
 
@@ -179,11 +179,11 @@ This matters because a burner operating with a similar pressure difference does 
 
 The workbench therefore shows both:
 
-$
+$$
 \boxed{LHV}
 \qquad\text{and}\qquad
-\boxed{Wobbe\ Index}
-$
+\boxed{\text{Wobbe Index}}
+$$
 
 This is especially useful when comparing hydrogen-rich and methane-rich gases.
 
@@ -193,23 +193,23 @@ This is especially useful when comparing hydrogen-rich and methane-rich gases.
 
 For a generic fuel containing carbon, hydrogen and oxygen, the theoretical oxygen requirement can be written as:
 
-$
+$$
 \boxed{
 n_{O_2,st}=C+\frac{H}{4}-\frac{O}{2}
 }
-$
+$$
 
 For example:
 
-$
+$$
 CH_4+2O_2\rightarrow CO_2+2H_2O
-$
+$$
 
 and:
 
-$
+$$
 H_2+\frac{1}{2}O_2\rightarrow H_2O
-$
+$$
 
 The workbench calculates the oxygen requirement from the elemental balance of the full fuel mixture.
 
@@ -228,9 +228,9 @@ The public model also includes the effect of humid ambient air in the combustion
 
 Industrial furnaces normally operate with air above the theoretical minimum.
 
-$
+$$
 Air_{actual}=Air_{stoich}(1+EA)
-$
+$$
 
 where $EA$ is the excess-air fraction.
 
@@ -240,15 +240,15 @@ Too much air is also undesirable because additional air has to be heated and fin
 
 Conceptually:
 
-$
-EA\uparrow
+$$
+EA \uparrow
 \rightarrow
-Air\ flow\uparrow
+\text{Air flow} \uparrow
 \rightarrow
-Flue\ gas\ flow\uparrow
+\text{Flue-gas flow} \uparrow
 \rightarrow
-Stack\ heat\ loss\uparrow
-$
+\text{Stack heat loss} \uparrow
+$$
 
 This makes excess air an optimisation variable, not simply an analyser number.
 
@@ -256,17 +256,17 @@ A particularly important point is the difference between **CO₂ mass flow** and
 
 If fuel flow and fuel composition are unchanged:
 
-$
+$$
 EA\uparrow
-$
+$$
 
 does not create more carbon.
 
 So the CO₂ formed by combustion remains approximately unchanged, while the additional air dilutes it:
 
-$
+$$
 CO_2\;vol\%\downarrow
-$
+$$
 
 The software shows this relationship directly.
 
@@ -278,15 +278,15 @@ In an induced-draft furnace, the ID fan maintains the furnace slightly below atm
 
 The physical relationship is:
 
-$
-ID\ fan
+$$
+\text{ID fan}
 \rightarrow
-Furnace\ draft
+\text{Furnace draft}
 \rightarrow
-Burner\ \Delta P
+\text{Burner }\Delta P
 \rightarrow
-Air\ drawn\ through\ burners
-$
+\text{Air drawn through burners}
+$$
 
 This is one of the most important links between combustion and furnace control.
 
@@ -304,10 +304,10 @@ A furnace is useful only if the heat released by combustion reaches the process.
 
 Inside the firebox, radiation is strongly dependent on temperature:
 
-$
+$$
 Q_{rad}\propto
 \varepsilon\sigma A\left(T_g^4-T_t^4\right)
-$
+$$
 
 This fourth-power relationship is one reason local furnace temperature and flame behaviour matter so much.
 
@@ -323,7 +323,7 @@ As coking develops, more tube-metal temperature may be required to transfer the 
 
 That is why combustion optimisation connects directly with:
 
-$
+$$
 \text{Heat flux}
 \rightarrow
 \text{Tube temperature}
@@ -331,7 +331,7 @@ $
 \text{Coking}
 \rightarrow
 \text{Run length}
-$
+$$
 
 
 The current heat-transfer layer calculates overall heat recovery, radiant and convection duty, stack loss, average and peak teaching heat flux, and the effect of combustion changes on thermal efficiency. It still does not claim to predict local tube-metal temperature or coking rate.
@@ -346,36 +346,36 @@ The feed and dilution steam have to be heated, but the hydrocarbon also undergoe
 
 So the process heat requirement contains both:
 
-$
+$$
 \boxed{\text{Sensible heat}}
-$
+$$
 
 and:
 
-$
+$$
 \boxed{\text{Reaction heat}}
-$
+$$
 
 For the public workbench I use a simple source-informed engineering load model:
 
-$
+$$
 L=
 \dot m_{HC}
 +
 k_s\dot m_{steam}
-$
+$$
 
 with a separate weighting for dilution steam.
 
 The required furnace duty is then scaled from a generalised start-of-run or end-of-run teaching condition:
 
-$
+$$
 \boxed{
 Q_{required}
 =
 Q_{ref}\frac{L}{L_{ref}}
 }
-$
+$$
 
 This is intentionally a first engineering approximation rather than a rigorous cracking-kinetics model.
 
@@ -389,13 +389,13 @@ The same total furnace duty can be distributed differently.
 
 For a simple bottom/sidewall split:
 
-$
+$$
 Q_{bottom}=f_bQ_{fired}
-$
+$$
 
-$
+$$
 Q_{sidewall}=(1-f_b)Q_{fired}
-$
+$$
 
 and average burner loading is calculated from the active burner-group count.
 
@@ -417,11 +417,11 @@ At the same time, a feed-flow disturbance can affect the process much faster.
 
 This is why a good furnace control structure can combine:
 
-$
+$$
 \text{Feed-forward}
 +
 \text{Feedback}
-$
+$$
 
 Feed and dilution-steam flow can indicate that heat demand is changing before the slow furnace temperature has fully responded.
 
@@ -429,7 +429,7 @@ The temperature controller then corrects the remaining error.
 
 Conceptually:
 
-$
+$$
 \text{Feed change}
 \rightarrow
 \text{Feed-forward fuel demand}
@@ -439,7 +439,7 @@ $
 \text{Outlet temperature}
 \rightarrow
 \text{Feedback correction}
-$
+$$
 
 
 Control design is also an optimisation problem.
@@ -448,17 +448,17 @@ If a process is poorly controlled, operators normally need larger margins from c
 
 Better control can reduce process variability:
 
-$
+$$
 \boxed{
-Better\ control
+\text{Better control}
 \rightarrow
-Lower\ variability
+\text{Lower variability}
 \rightarrow
-Smaller\ operating\ margin
+\text{Smaller operating margin}
 \rightarrow
-Better\ efficiency
+\text{Better efficiency}
 }
-$
+$$
 
 For a furnace, lower variability can mean less unnecessary overfiring, more stable thermal severity and better use of the available operating envelope.
 
@@ -532,13 +532,13 @@ Every change is compared with the condition immediately before it.
 
 The workbench shows:
 
-$
+$$
 \boxed{\text{Before}}
 \rightarrow
 \boxed{\text{Now}}
 \rightarrow
 \boxed{\text{Change}}
-$
+$$
 
 for the main combustion quantities.
 
@@ -556,9 +556,9 @@ It then lets me study:
 
 The module closes the energy balance as:
 
-$
+$$
 Q_{fired}=Q_{radiant}+Q_{convection}+Q_{stack}+Q_{other}
-$
+$$
 
 and calculates overall furnace efficiency, useful heat, radiant heat absorbed, convection heat recovered, stack heat loss, box efficiency, average and peak teaching radiant heat flux, and the approximate duty recovered in each convection-bank group.
 
@@ -585,13 +585,13 @@ It then lets me study:
 
 The process heat split is shown as:
 
-$
+$$
 Q_{radiant}
 =
 Q_{sensible}
 +
 Q_{reaction,residual}
-$
+$$
 
 This is useful because a pyrolysis furnace is not only heating the feed. A large part of the radiant heat supports the strongly endothermic cracking reactions.
 
