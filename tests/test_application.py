@@ -51,6 +51,14 @@ def test_dash_application_shell():
         "heat-before-now",
         "heat-why-open",
         "heat-why-modal",
+        "process-page",
+        "process-inlet-temp",
+        "process-cot",
+        "process-effect-graph",
+        "process-results-panel",
+        "process-before-now",
+        "process-why-open",
+        "process-why-modal",
     }
     assert required <= ids
 
@@ -63,7 +71,7 @@ def test_dash_http_root():
 
 
 def test_callbacks_registered():
-    assert len(app.callback_map) >= 12
+    assert len(app.callback_map) >= 16
     outputs = " ".join(app.callback_map)
     assert "effect-graph" in outputs
     assert "before-now" in outputs
@@ -71,7 +79,11 @@ def test_callbacks_registered():
     assert "heat-effect-graph" in outputs
     assert "heat-before-now" in outputs
     assert "heat-why-modal" in outputs
+    assert "process-effect-graph" in outputs
+    assert "process-before-now" in outputs
+    assert "process-why-modal" in outputs
     assert "combustion-page" in outputs
+    assert "process-page" in outputs
 
 
 def test_response_chart_uses_square_points_not_a_line():
