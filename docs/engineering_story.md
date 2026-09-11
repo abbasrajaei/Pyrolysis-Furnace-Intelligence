@@ -1,10 +1,10 @@
 # Engineering investigation
 
-Industrial furnace experience → combustion questions → process/control reconstruction → first-principles accounting → conserved firing logic → static scenarios → bounded engineering reasoning.
+Industrial furnace experience → combustion questions → first-principles fuel/air accounting → furnace heat balance → conserved firing logic → control reasoning.
 
 Industrial operation and commissioning experience motivated this project: furnace decisions involve combustion, heat recovery, process demand and several interacting control functions. A change that looks sensible at one controller may be constrained elsewhere. A temperature error can create a firing request while a pressure override prevents the normal fuel route from acting. Understanding that distinction is an engineering task before it is a software task.
 
-The investigation began by separating physical relationships from control intent. Fuel mass flow and heating value define chemical input. Radiant and convection duties describe where useful heat is accounted for. Burner and zone allocations determine how a fixed total is divided. Process demand and steam demand have related but distinct roles. Draft affects the pressure environment for combustion air, but a pressure reading alone is not an airflow calibration.
+The investigation began by separating physical relationships from control intent. Fuel composition sets molecular weight, heating value, Wobbe Index and oxygen demand. Feed and steam establish a first process-load estimate. Fired duty then drives fuel and air demand. The current thermal layer closes the furnace heat balance into radiant absorption, convection recovery, stack sensible-heat loss and other loss. Burner allocation determines where firing is distributed. Draft affects the pressure environment for combustion air, but a pressure reading alone is not an airflow calibration.
 
 The next step was to separate what can be calculated from what must remain unknown. Complete declared compositions support atom balances. Compatible heat duties support energy accounting. Explicit physical shares support conservation. A control narrative, however, does not identify furnace time constants, PID gains, installed valve characteristics or coking rates. Those relationships remain unavailable rather than being filled with plausible-looking coefficients.
 
@@ -26,3 +26,10 @@ The contribution is an inspectable engineering argument: declare the physical ba
 ## Workbench 2.0
 
 The second public interface was redesigned around an engineering-study workflow rather than a collection of sliders and static charts. A retained baseline, intelligent linked fuel composition, ready-made presets, sensitivity curves, saved-case comparison and a persistent Engineering Guidance rail make the model usable as an investigation tool. The guidance rail reacts to the parameter being changed and separates calculated consequences from qualitative physical implications and unsupported predictions. The numerical engine remains bounded by the same evidence policy: interface quality does not justify additional plant physics.
+
+
+## Workbench 2.1
+
+Version 2.1 adds a connected Heat Transfer module rather than treating heat accounting as an isolated residual. The current combustion result supplies fired duty and flue-gas flow to the thermal layer. Stack temperature and excess air therefore influence calculated stack sensible-heat loss, while radiant share determines the public radiant/convection split. The interface shows overall efficiency, box efficiency, radiant and convection duty, average/peak teaching heat flux and convection-bank recovery in the same Before → Now investigation style used by the combustion module.
+
+The thermal model deliberately stops before tube-metal temperature and coking-rate prediction. Those quantities require local heat flux, process-side heat-transfer coefficients, coke resistance and local temperature information that the public model does not possess.
