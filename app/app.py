@@ -61,7 +61,8 @@ def compare_view(before,current,hold,changed):
    html.Div(fmt(row["now"],row["unit"]),className="compare-value now"),
    html.Div(row["unit"],className="compare-unit"),
    html.Div(txt,className=f"compare-change {cls}")],className="compare-row"))
- head=html.Div([html.Div(""),html.Div("Before"),html.Div(""),html.Div("Now"),html.Div(""),html.Div("Change")],className="compare-head")\n return html.Div([head,*body],className="compare-body")
+ head=html.Div([html.Div(""),html.Div("Before"),html.Div(""),html.Div("Now"),html.Div(""),html.Div("Change")],className="compare-head")
+ return html.Div([head,*body],className="compare-body")
 
 def hold_text(v):
  return {"fired_duty":"Keeping fired duty constant","fuel_flow":"Keeping fuel flow constant",
