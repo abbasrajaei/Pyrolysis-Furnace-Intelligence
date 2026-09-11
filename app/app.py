@@ -27,7 +27,7 @@ def composition_view(case):
  out=[]
  for k in COMPONENTS:
   v=100*case["composition"].get(k,0)
-  out.append(html.Div([html.Span(FUEL_INPUTS[k],className="comp-name"),
+  out.append(html.Div([html.Span(DISPLAY_FORMULAS[k],className="comp-name",title=FUEL_INPUTS[k]),
    html.Div(html.Div(className="comp-bar-fill",style={"width":f"{min(v,100):.2f}%"}),className="comp-bar"),
    html.Span(f"{v:.2f}%",className="comp-number")],className="comp-row"))
  return html.Div(out,className="composition-list")
@@ -61,7 +61,7 @@ def compare_view(before,current,hold,changed):
    html.Div(fmt(row["now"],row["unit"]),className="compare-value now"),
    html.Div(row["unit"],className="compare-unit"),
    html.Div(txt,className=f"compare-change {cls}")],className="compare-row"))
- return html.Div(body,className="compare-body")
+ head=html.Div([html.Div(""),html.Div("Before"),html.Div(""),html.Div("Now"),html.Div(""),html.Div("Change")],className="compare-head")\n return html.Div([head,*body],className="compare-body")
 
 def hold_text(v):
  return {"fired_duty":"Keeping fired duty constant","fuel_flow":"Keeping fuel flow constant",
@@ -118,7 +118,7 @@ app.layout=html.Div([
     html.Div([html.Label("Change",className="input-label"),
      dcc.Dropdown(id="fuel-component",options=[{"label":FUEL_INPUTS[k],"value":k} for k in COMPONENTS],value="H2",clearable=False)]),
     html.Div([html.Label("To",className="input-label"),
-     html.Div([dcc.Input(id="fuel-target",type="number",value=80.0,min=0,max=100,step=.1),html.Span("%")],className="input-line compact")])
+     html.Div([dcc.Input(id="fuel-target",type="number",value=80.0,min=0,max=100,step=.1,debounce=True),html.Span("%")],className="input-line compact")])
    ],className="fuel-edit-grid"),
    html.Label("Balance with",className="input-label"),
    dcc.Dropdown(id="balance-component",options=[{"label":FUEL_INPUTS[k],"value":k} for k in COMPONENTS],value="CH4",clearable=False),
@@ -137,7 +137,7 @@ app.layout=html.Div([
   ],className="panel input-panel"),
   html.Section([
    html.Div([html.Div([html.Div("See the effect",className="section-title"),html.Div(id="graph-context",className="graph-context")]),
-    dcc.Dropdown(id="response-choice",clearable=False,className="response-dropdown")],className="graph-head"),
+    html.Div([html.Div("Show effect on",className="response-label"),dcc.Dropdown(id="response-choice",clearable=False,className="response-dropdown")])],className="graph-head"),
    dcc.Graph(id="effect-graph",config={"displayModeBar":False,"responsive":True},className="effect-graph"),
    html.Div([html.Div("Before",className="legend-pill before-pill"),html.Div("Now",className="legend-pill now-pill"),
     html.Div("The curve is recalculated from the same combustion model used for the results.",className="graph-note")],className="graph-footer")
@@ -158,7 +158,7 @@ app.layout=html.Div([
  Input("operating-case","value"),Input("fuel-apply","n_clicks"),Input("reset","n_clicks"),
  State("fuel-component","value"),State("fuel-target","value"),State("balance-component","value"),State("current-store","data"),
  prevent_initial_call=True)
-def update_case(feed,steam,ea,bottom,op,_apply,_reset,component,target,balance,current):
+def update_case(feed,steam,ea,bottom,op,target,_reset,component,balance,current):
  trig=ctx.triggered_id; old=deepcopy(current or DEFAULT_CASE)
  if trig=="reset": return deepcopy(DEFAULT_CASE),deepcopy(DEFAULT_CASE),"H2"
  new=deepcopy(old); changed="feed_kg_s"
@@ -167,11 +167,19 @@ def update_case(feed,steam,ea,bottom,op,_apply,_reset,component,target,balance,c
  elif trig=="excess-air" and ea is not None: new["excess_air"]=float(ea)/100; changed="excess_air"
  elif trig=="bottom-split" and bottom is not None: new["bottom_split"]=float(bottom)/100; changed="bottom_split"
  elif trig=="operating-case": new["operating_case"]=op; changed="feed_kg_s"
- elif trig=="fuel-apply" and component and target is not None:
+ elif trig=="fuel-target" and component and target is not None:
   new["balance_component"]=balance or "CH4"
   new["composition"]=rebalance_composition(old["composition"],component,float(target)/100,new["balance_component"]); changed=component
  else: return no_update,no_update,no_update
  return new,old,changed
+
+@app.callback(
+ Output("feed","value"),Output("steam-ratio","value"),Output("excess-air","value"),Output("bottom-split","value"),
+ Output("operating-case","value"),Output("fuel-component","value"),Output("balance-component","value"),Output("hold-constant","value"),
+ Input("reset","n_clicks"),prevent_initial_call=True)
+def reset_controls(_n):
+ c=DEFAULT_CASE
+ return c["feed_kg_s"],c["steam_ratio"],100*c["excess_air"],100*c["bottom_split"],c["operating_case"],"H2",c["balance_component"],"fired_duty"
 
 @app.callback(Output("fuel-target","value"),Input("fuel-component","value"),State("current-store","data"))
 def sync_target(component,current):
