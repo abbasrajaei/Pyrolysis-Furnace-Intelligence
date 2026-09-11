@@ -9,7 +9,9 @@ from copy import deepcopy
 from math import isfinite
 
 from .combustion_workbench import (
+    COMPONENTS,
     DEFAULT_CASE,
+    FUEL_INPUTS,
     PUBLIC_CASES,
     evaluate_case,
     rebalance_composition,
@@ -89,6 +91,15 @@ THERMAL_RESPONSE_OPTIONS = {
         "average_flux_kw_m2",
         "stack_loss_mw",
     ],
+    **{
+        component: [
+            "overall_efficiency",
+            "stack_loss_mw",
+            "flue_flow_t_h",
+            "useful_duty_mw",
+        ]
+        for component in COMPONENTS
+    },
 }
 
 THERMAL_DEFAULT_RESPONSE = {
@@ -97,6 +108,7 @@ THERMAL_DEFAULT_RESPONSE = {
     "other_loss_fraction": "overall_efficiency",
     "excess_air": "overall_efficiency",
     "feed_kg_s": "fired_duty_mw",
+    **{component: "overall_efficiency" for component in COMPONENTS},
 }
 
 
@@ -233,6 +245,7 @@ def thermal_input_label(name):
         "other_loss_fraction": "Other heat loss",
         "excess_air": "Excess air",
         "feed_kg_s": "Feed rate",
+        **FUEL_INPUTS,
     }.get(name, name)
 
 
@@ -243,10 +256,13 @@ def thermal_input_unit(name):
         "other_loss_fraction": "%",
         "excess_air": "%",
         "feed_kg_s": "kg/s",
+        **{component: "%" for component in COMPONENTS},
     }.get(name, "")
 
 
 def thermal_input_value(combustion_case, thermal_settings, name):
+    if name in COMPONENTS:
+        return float(combustion_case["composition"][name])
     if name in {"feed_kg_s", "excess_air"}:
         return float(combustion_case[name])
     return float(thermal_settings[name])
@@ -264,13 +280,33 @@ def thermal_sweep_bounds(combustion_case, thermal_settings, name):
     if name == "feed_kg_s":
         ref = PUBLIC_CASES[combustion_case["operating_case"]]["feed_kg_s"]
         return 0.60 * ref, 1.15 * ref
+    if name in COMPONENTS:
+        balance = combustion_case.get("balance_component", "CH4")
+        if balance == name:
+            balance = max(
+                (k for k in COMPONENTS if k != name),
+                key=lambda k: combustion_case["composition"][k],
+            )
+        fixed = sum(
+            float(value)
+            for key, value in combustion_case["composition"].items()
+            if key not in {name, balance}
+        )
+        return 0.0, max(0.0, 1.0 - fixed)
     raise ValueError("Unsupported thermal sweep input")
 
 
 def _changed_case_and_settings(combustion_case, thermal_settings, name, value):
     case = deepcopy(combustion_case)
     settings = deepcopy(thermal_settings)
-    if name in {"feed_kg_s", "excess_air"}:
+    if name in COMPONENTS:
+        case["composition"] = rebalance_composition(
+            case["composition"],
+            name,
+            value,
+            case.get("balance_component", "CH4"),
+        )
+    elif name in {"feed_kg_s", "excess_air"}:
         case[name] = value
     else:
         settings[name] = value
@@ -349,6 +385,14 @@ def thermal_explanation(changed_input):
             "Higher process load increases required firing. With the same heat split "
             "and geometry, radiant duty and average heat flux rise."
         ),
+        **{
+            component: (
+                f"Changing {FUEL_INPUTS[component].lower()} changes fuel properties "
+                "and flue-gas flow. At the same stack temperature this changes stack "
+                "heat loss and therefore the useful heat recovered by the furnace."
+            )
+            for component in COMPONENTS
+        },
     }.get(changed_input, "The heat balance has changed.")
 
 
