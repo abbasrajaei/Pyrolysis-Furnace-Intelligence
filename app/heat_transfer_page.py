@@ -5,7 +5,7 @@ from copy import deepcopy
 from dash import Input, Output, State, ctx, dcc, html, no_update
 import plotly.graph_objects as go
 
-from pyrolysis_furnace_intelligence.combustion_workbench import DEFAULT_CASE, evaluate_case
+from pyrolysis_furnace_intelligence.combustion_workbench import COMPONENTS, DEFAULT_CASE, evaluate_case
 from pyrolysis_furnace_intelligence.heat_transfer_workbench import (
     AMBIENT_TEMPERATURE_C,
     CONVECTION_BANK_SHARES,
@@ -424,9 +424,9 @@ def _heat_results(result):
                 "MW",
             ),
             _heat_result_card(
-                "Other heat loss",
-                f"{energy['other_loss_mw']:.2f}",
-                "MW",
+                "Box efficiency",
+                f"{energy['box_efficiency']:.2f}",
+                "%",
             ),
             _heat_result_card(
                 "Average heat flux",
@@ -552,7 +552,7 @@ def _before_result(
     before_settings,
     changed,
 ):
-    if changed in {"feed_kg_s", "excess_air"}:
+    if changed in {"feed_kg_s", "excess_air"} or changed in COMPONENTS:
         return evaluate_thermal(before_case, current_settings)
     return evaluate_thermal(current_case, before_settings)
 
@@ -727,7 +727,7 @@ def register_heat_callbacks(app):
         if trigger == "module-select":
             if module != "heat":
                 return no_update, no_update, no_update
-            if combustion_changed in {"feed_kg_s", "excess_air"}:
+            if combustion_changed in THERMAL_RESPONSE_OPTIONS:
                 return old, deepcopy(old), combustion_changed
             return old, deepcopy(old), "stack_temperature_c"
 
@@ -886,7 +886,16 @@ def register_heat_callbacks(app):
                 "Radiant duty",
                 "Heat flux",
             ],
-        }[changed]
+        }.get(
+            changed,
+            [
+                "Fuel composition",
+                "Flue-gas flow",
+                "Stack loss",
+                "Useful heat",
+                "Efficiency",
+            ],
+        )
 
         path_children = []
         for index, item in enumerate(why_path):
