@@ -128,7 +128,7 @@ def results_view(result):
             result_card("Air flow", f"{result['combustion']['air_flow_kg_h']/1000:.2f}", "t/h"),
             result_card("Flue-gas flow", f"{result['combustion']['flue_flow_kg_h']/1000:.2f}", "t/h"),
             result_card("O₂, dry", f"{result['combustion']['dry_o2_pct']:.2f}", "%"),
-            result_card("CO₂ from combustion", f"{result['combustion']['co2_formed_kg_h']/1000:.2f}", "t/h"),
+            result_card("CO₂ produced", f"{result['combustion']['co2_formed_kg_h']/1000:.2f}", "t/h"),
             result_card("Average burner load", f"{result['firing']['average_burner_mw']:.3f}", "MW/burner"),
         ],
         className="results-grid",
@@ -214,7 +214,7 @@ def effect_figure(current, before, changed, response, hold):
         changed,
         response,
         hold_constant=hold,
-        points=61,
+        points=31,
     )
     x = list(data["x"])
     x_before = float(data["x_before"])
@@ -237,9 +237,9 @@ def effect_figure(current, before, changed, response, hold):
             mode="markers",
             marker={
                 "symbol": "square",
-                "size": 6,
+                "size": 8,
                 "color": C["blue"],
-                "opacity": 0.82,
+                "opacity": 0.90,
             },
             hovertemplate=(
                 f"{data['input_label']}: %{{x:.2f}}"
@@ -256,7 +256,7 @@ def effect_figure(current, before, changed, response, hold):
             text=["Before"],
             textposition="top center",
             marker={
-                "size": 15,
+                "size": 17,
                 "color": C["before"],
                 "symbol": "square-open",
                 "line": {"width": 2, "color": C["text"]},
@@ -272,7 +272,7 @@ def effect_figure(current, before, changed, response, hold):
             text=["Now"],
             textposition="bottom center",
             marker={
-                "size": 15,
+                "size": 17,
                 "color": C["amber"],
                 "symbol": "square",
                 "line": {"width": 2, "color": C["text"]},
