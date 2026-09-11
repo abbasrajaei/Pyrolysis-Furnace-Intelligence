@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyrolysis-furnace-intelligence"
-version = "2.0.0"
-description = "Interactive furnace engineering workbench for combustion, thermal accounting, firing distribution and bounded control reasoning"
+version = "2.1.0"
+description = "Interactive furnace engineering workbench for combustion, heat transfer, thermal efficiency, firing distribution and bounded control reasoning"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
 dependencies = [
