@@ -551,10 +551,18 @@ def _before_result(
     current_settings,
     before_settings,
     changed,
+    hold_constant,
+    combustion_changed,
 ):
     if changed in {"feed_kg_s", "excess_air"} or changed in COMPONENTS:
         return evaluate_thermal(before_case, current_settings)
-    return evaluate_thermal(current_case, before_settings)
+    return evaluate_thermal(
+        current_case,
+        before_settings,
+        before_case,
+        hold_constant,
+        combustion_changed,
+    )
 
 
 def _heat_figure(
@@ -564,6 +572,8 @@ def _heat_figure(
     before_settings,
     changed,
     response,
+    hold_constant,
+    combustion_changed,
 ):
     sweep = thermal_sweep(
         current_case,
@@ -571,19 +581,30 @@ def _heat_figure(
         changed,
         response,
         points=31,
+        before_combustion_case=before_case,
+        hold_constant=hold_constant,
+        active_combustion_change=combustion_changed,
     )
-    now_result = evaluate_thermal(current_case, current_settings)
+    now_result = evaluate_thermal(
+        current_case,
+        current_settings,
+        before_case,
+        hold_constant,
+        combustion_changed,
+    )
     before_result = _before_result(
         current_case,
         before_case,
         current_settings,
         before_settings,
         changed,
+        hold_constant,
+        combustion_changed,
     )
 
     x = list(sweep["x"])
     x_now = sweep["x_now"]
-    if changed in {"feed_kg_s", "excess_air"}:
+    if changed in {"feed_kg_s", "excess_air"} or changed in COMPONENTS:
         x_before = thermal_input_value(
             before_case,
             current_settings,
@@ -797,6 +818,8 @@ def register_heat_callbacks(app):
         Output("heat-why-content", "children"),
         Input("current-store", "data"),
         Input("before-store", "data"),
+        Input("changed-store", "data"),
+        Input("hold-constant", "value"),
         Input("heat-current-store", "data"),
         Input("heat-before-store", "data"),
         Input("heat-changed-store", "data"),
@@ -805,6 +828,8 @@ def register_heat_callbacks(app):
     def render_heat(
         current_case,
         before_case,
+        combustion_changed,
+        hold_constant,
         current_settings,
         before_settings,
         changed,
@@ -827,7 +852,12 @@ def register_heat_callbacks(app):
             else THERMAL_DEFAULT_RESPONSE[changed]
         )
 
-        combustion = evaluate_case(current_case)
+        combustion = evaluate_case(
+            current_case,
+            before_case,
+            hold_constant,
+            combustion_changed,
+        )
         fig, sweep, before_result, now_result, x_before, x_now = _heat_figure(
             current_case,
             before_case,
@@ -835,6 +865,8 @@ def register_heat_callbacks(app):
             before_settings,
             changed,
             response,
+            hold_constant,
+            combustion_changed,
         )
 
         unit = sweep["input_unit"]
