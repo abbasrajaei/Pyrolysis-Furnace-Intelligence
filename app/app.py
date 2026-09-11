@@ -38,6 +38,11 @@ from app.heat_transfer_page import (
     heat_main_layout,
     register_heat_callbacks,
 )
+from app.process_page import (
+    process_actions_layout,
+    process_main_layout,
+    register_process_callbacks,
+)
 
 app = Dash(__name__, title="Pyrolysis Furnace Intelligence", suppress_callback_exceptions=True)
 server = app.server
@@ -345,6 +350,7 @@ app.layout = html.Div(
                             options=[
                                 {"label": "Combustion", "value": "combustion"},
                                 {"label": "Heat transfer", "value": "heat"},
+                                {"label": "Process", "value": "process"},
                             ],
                             value="combustion",
                             inline=True,
@@ -385,6 +391,7 @@ app.layout = html.Div(
                             className="top-actions",
                         ),
                         heat_actions_layout(),
+                        process_actions_layout(),
                     ],
                     className="action-stack",
                 ),
@@ -612,6 +619,7 @@ app.layout = html.Div(
                     className="module-page",
                 ),
                 heat_main_layout(),
+                process_main_layout(),
             ],
             className="module-area",
         ),
@@ -647,8 +655,10 @@ app.layout = html.Div(
 @app.callback(
     Output("combustion-page", "className"),
     Output("heat-page", "className"),
+    Output("process-page", "className"),
     Output("combustion-actions", "className"),
     Output("heat-actions", "className"),
+    Output("process-actions", "className"),
     Input("module-select", "value"),
 )
 def switch_module(module):
@@ -656,13 +666,26 @@ def switch_module(module):
         return (
             "module-page page-hidden",
             "module-page",
+            "module-page page-hidden",
+            "top-actions page-hidden",
+            "top-actions",
+            "top-actions page-hidden",
+        )
+    if module == "process":
+        return (
+            "module-page page-hidden",
+            "module-page page-hidden",
+            "module-page",
+            "top-actions page-hidden",
             "top-actions page-hidden",
             "top-actions",
         )
     return (
         "module-page",
         "module-page page-hidden",
+        "module-page page-hidden",
         "top-actions",
+        "top-actions page-hidden",
         "top-actions page-hidden",
     )
 
@@ -928,6 +951,7 @@ def toggle_why(_open, _close):
 
 
 register_heat_callbacks(app)
+register_process_callbacks(app)
 
 
 if __name__ == "__main__":

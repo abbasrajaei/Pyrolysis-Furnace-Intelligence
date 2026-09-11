@@ -1,6 +1,6 @@
 # Pyrolysis Furnace Intelligence
 
-## Combustion and Heat-Transfer Workbench
+## Combustion, Heat-Transfer and Process Workbench
 
 I built this project to connect the combustion equations we learn as engineers with the way a real industrial furnace behaves.
 
@@ -16,7 +16,7 @@ The purpose of this workbench is simple:
 
 > **Change one combustion or furnace parameter and immediately see what else changes, how much it changes, and why.**
 
-The software is now organised in two connected layers: **Combustion** and **Heat transfer**. The combustion layer determines fired duty, fuel demand, air and flue gas. The heat-transfer layer then uses that result to show where the fired heat goes and how furnace efficiency changes.
+The software is organised in three connected layers: **Combustion**, **Heat transfer** and **Process**. Combustion determines fired duty, fuel demand, air and flue gas. Heat transfer shows where that fired heat goes. The Process layer then follows the heat into the radiant coil and shows how feed, dilution steam, coil temperature, pressure drop and residence time interact.
 
 The public model uses generalised teaching conditions. It is not a plant digital twin, burner-design package, CFD model, BMS, APC replacement or safety system.
 
@@ -483,7 +483,7 @@ Fuel composition, fuel flow, Wobbe index, fired duty, excess oxygen, air flow, f
 
 I wanted a tool where I could change one of these variables and immediately see those connections.
 
-The result is this **Furnace Engineering Workbench**, with connected Combustion and Heat Transfer modules.
+The result is this **Furnace Engineering Workbench**, with connected Combustion, Heat Transfer and Process modules.
 
 The engineering approach is informed by my experience with real industrial cracking-furnace systems, including Technip-designed furnace architecture, but the public implementation is independently authored and uses generalised teaching conditions.
 
@@ -493,7 +493,7 @@ The engineering approach is informed by my experience with real industrial crack
 
 The application is designed as a horizontal engineering workspace so the important inputs, response graph and results remain visible together.
 
-Use the module selector at the top to move between **Combustion** and **Heat transfer**.
+Use the module selector at the top to move between **Combustion**, **Heat transfer** and **Process**.
 
 The Combustion module has three main areas.
 
@@ -577,6 +577,39 @@ Because the two modules are connected, a combustion change such as excess air, f
 
 A separate methodology note explains the equations and model limits in `docs/heat_transfer_methodology.md`.
 
+### Process
+
+The Process module takes the current feed and steam condition from Combustion and the current radiant heat result from Heat transfer.
+
+It then lets me study:
+
+- coil inlet temperature;
+- coil outlet temperature (COT);
+- residence time;
+- coil pressure drop;
+- hydrocarbon partial pressure;
+- a relative time-temperature severity index;
+- estimated sensible heating;
+- residual reaction heat.
+
+The process heat split is shown as:
+
+\[
+Q_{radiant}
+=
+Q_{sensible}
++
+Q_{reaction,residual}
+\]
+
+This is useful because a pyrolysis furnace is not only heating the feed. A large part of the radiant heat supports the strongly endothermic cracking reactions.
+
+The process response graph follows the same square-point design as the other modules. If COT changes, the graph can show the change in time-temperature severity. If feed changes, it can show the effect on residence time or pressure drop. If steam/feed changes, it can show the effect on hydrocarbon partial pressure.
+
+The module deliberately keeps **conversion as a case anchor rather than an off-design prediction**. It also reports only the direction of coking drivers rather than inventing a coke-growth rate.
+
+A separate methodology note explains this layer in `docs/process_methodology.md`.
+
 ---
 
 ## What the current model calculates
@@ -604,7 +637,13 @@ The current combustion layer calculates:
 - overall and box efficiency;
 - useful, radiant and convection duty;
 - average and peak teaching radiant heat flux;
-- public convection-bank heat-recovery distribution.
+- public convection-bank heat-recovery distribution;
+- radiant-coil temperature rise;
+- estimated sensible versus residual reaction heat;
+- coil pressure-drop teaching estimate;
+- residence-time teaching estimate;
+- hydrocarbon partial pressure;
+- relative time-temperature severity.
 
 ---
 
