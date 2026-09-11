@@ -7,6 +7,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
@@ -30,6 +32,11 @@ from pyrolysis_furnace_intelligence.combustion_workbench import (
     rebalance_composition,
     response_sweep,
     simple_explanation,
+)
+from app.heat_transfer_page import (
+    heat_actions_layout,
+    heat_main_layout,
+    register_heat_callbacks,
 )
 
 app = Dash(__name__, title="Pyrolysis Furnace Intelligence", suppress_callback_exceptions=True)
@@ -326,8 +333,25 @@ app.layout = html.Div(
                 html.Div(
                     [
                         html.Div("Pyrolysis Furnace Intelligence", className="brand-title"),
-                        html.Div("Combustion Workbench", className="brand-subtitle"),
-                    ]
+                        html.Div("Furnace Engineering Workbench", className="brand-subtitle"),
+                    ],
+                    className="brand-block",
+                ),
+                html.Div(
+                    [
+                        html.Div("Module", className="top-label"),
+                        dcc.RadioItems(
+                            id="module-select",
+                            options=[
+                                {"label": "Combustion", "value": "combustion"},
+                                {"label": "Heat transfer", "value": "heat"},
+                            ],
+                            value="combustion",
+                            inline=True,
+                            className="module-radio",
+                        ),
+                    ],
+                    className="module-select-wrap",
                 ),
                 html.Div(
                     [
@@ -347,19 +371,30 @@ app.layout = html.Div(
                 ),
                 html.Div(
                     [
-                        html.Button(
-                            "Why did this happen?",
-                            id="why-open",
-                            className="btn secondary",
-                            n_clicks=0,
+                        html.Div(
+                            [
+                                html.Button(
+                                    "Why did this happen?",
+                                    id="why-open",
+                                    className="btn secondary",
+                                    n_clicks=0,
+                                ),
+                                html.Button("Reset", id="reset", className="btn", n_clicks=0),
+                            ],
+                            id="combustion-actions",
+                            className="top-actions",
                         ),
-                        html.Button("Reset", id="reset", className="btn", n_clicks=0),
+                        heat_actions_layout(),
                     ],
-                    className="top-actions",
+                    className="action-stack",
                 ),
             ],
             className="topbar",
         ),
+        html.Div(
+            [
+                html.Div(
+                    [
         html.Main(
             [
                 html.Section(
@@ -572,6 +607,14 @@ app.layout = html.Div(
             ],
             className="bottom-strip",
         ),
+                    ],
+                    id="combustion-page",
+                    className="module-page",
+                ),
+                heat_main_layout(),
+            ],
+            className="module-area",
+        ),
         html.Div(
             [
                 html.Div(
@@ -599,6 +642,29 @@ app.layout = html.Div(
     ],
     className="app-shell",
 )
+
+
+@app.callback(
+    Output("combustion-page", "className"),
+    Output("heat-page", "className"),
+    Output("combustion-actions", "className"),
+    Output("heat-actions", "className"),
+    Input("module-select", "value"),
+)
+def switch_module(module):
+    if module == "heat":
+        return (
+            "module-page page-hidden",
+            "module-page",
+            "top-actions page-hidden",
+            "top-actions",
+        )
+    return (
+        "module-page",
+        "module-page page-hidden",
+        "top-actions",
+        "top-actions page-hidden",
+    )
 
 
 @app.callback(
@@ -859,6 +925,9 @@ def toggle_why(_open, _close):
         if ctx.triggered_id == "why-open"
         else "modal-backdrop hidden"
     )
+
+
+register_heat_callbacks(app)
 
 
 if __name__ == "__main__":

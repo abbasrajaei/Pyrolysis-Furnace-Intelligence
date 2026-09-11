@@ -5,6 +5,6 @@ type: software
 authors:
   - family-names: Rajaei
     given-names: Abbas
-version: 2.0.0
+version: 2.1.0
 license: MIT
-abstract: "Interactive furnace engineering workbench combining declared combustion calculations, static heat accounting, conserved firing allocation, sensitivity analysis, bounded control scenarios and context-sensitive engineering guidance."
+abstract: "Interactive furnace engineering workbench connecting combustion calculations with heat-transfer, thermal-efficiency, firing-distribution and bounded control reasoning studies."
