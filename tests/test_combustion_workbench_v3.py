@@ -88,3 +88,76 @@ def test_combustion_products_are_physical():
  assert c["dry_flue_pct"]["O2"]>0
  assert c["wet_flue_pct"]["H2O"]>0
  assert c["humid_air_mass_kg_per_kmol_fuel"]>0
+
+
+def test_methane_richer_case_tells_the_expected_constant_duty_story():
+ before=dict(DEFAULT_CASE)
+ now=dict(DEFAULT_CASE)
+ now["composition"]=rebalance_composition(DEFAULT_COMPOSITION,"CH4",.795,"H2")
+ b=evaluate_case(before)
+ n=evaluate_case(now,before,"fired_duty","CH4")
+ assert n["firing"]["fired_duty_mw"]==pytest.approx(b["firing"]["fired_duty_mw"])
+ assert n["fuel"]["lhv_MJ_kg"]<b["fuel"]["lhv_MJ_kg"]
+ assert n["fuel"]["fuel_flow_kg_h"]>b["fuel"]["fuel_flow_kg_h"]
+ assert n["combustion"]["air_flow_kg_h"]>b["combustion"]["air_flow_kg_h"]
+ assert n["combustion"]["flue_flow_kg_h"]>b["combustion"]["flue_flow_kg_h"]
+ assert n["combustion"]["co2_formed_kg_h"]>b["combustion"]["co2_formed_kg_h"]
+
+
+def test_hydrogen_richer_case_reduces_fuel_and_co2_at_constant_duty():
+ before=dict(DEFAULT_CASE)
+ now=dict(DEFAULT_CASE)
+ now["composition"]=rebalance_composition(DEFAULT_COMPOSITION,"H2",.90,"CH4")
+ b=evaluate_case(before)
+ n=evaluate_case(now,before,"fired_duty","H2")
+ assert n["firing"]["fired_duty_mw"]==pytest.approx(b["firing"]["fired_duty_mw"])
+ assert n["fuel"]["lhv_MJ_kg"]>b["fuel"]["lhv_MJ_kg"]
+ assert n["fuel"]["fuel_flow_kg_h"]<b["fuel"]["fuel_flow_kg_h"]
+ assert n["combustion"]["co2_formed_kg_h"]<b["combustion"]["co2_formed_kg_h"]
+
+
+def test_excess_air_story_keeps_duty_and_fuel_fixed():
+ before=dict(DEFAULT_CASE)
+ now=dict(DEFAULT_CASE); now["excess_air"]=.20
+ b=evaluate_case(before); n=evaluate_case(now)
+ assert n["firing"]["fired_duty_mw"]==pytest.approx(b["firing"]["fired_duty_mw"])
+ assert n["fuel"]["fuel_flow_kg_h"]==pytest.approx(b["fuel"]["fuel_flow_kg_h"])
+ assert n["combustion"]["dry_o2_pct"]>b["combustion"]["dry_o2_pct"]
+ assert n["combustion"]["air_flow_kg_h"]>b["combustion"]["air_flow_kg_h"]
+ assert n["combustion"]["flue_flow_kg_h"]>b["combustion"]["flue_flow_kg_h"]
+ assert n["combustion"]["dry_co2_pct"]<b["combustion"]["dry_co2_pct"]
+ assert n["combustion"]["co2_formed_kg_h"]==pytest.approx(b["combustion"]["co2_formed_kg_h"])
+
+
+def test_feed_increase_moves_full_firing_chain_up():
+ before=dict(DEFAULT_CASE)
+ now=dict(DEFAULT_CASE); now["feed_kg_s"]=9.0
+ b=evaluate_case(before); n=evaluate_case(now)
+ for section,key in [
+  ("firing","fired_duty_mw"),
+  ("fuel","fuel_flow_kg_h"),
+  ("combustion","air_flow_kg_h"),
+  ("combustion","flue_flow_kg_h"),
+  ("combustion","co2_formed_kg_h"),
+  ("firing","average_burner_mw"),
+ ]:
+  assert n[section][key]>b[section][key]
+
+
+def test_firing_split_changes_distribution_only_and_warns_at_extreme_split():
+ before=dict(DEFAULT_CASE)
+ now=dict(DEFAULT_CASE); now["bottom_split"]=.70
+ b=evaluate_case(before); n=evaluate_case(now)
+ assert n["firing"]["fired_duty_mw"]==pytest.approx(b["firing"]["fired_duty_mw"])
+ assert n["fuel"]["fuel_flow_kg_h"]==pytest.approx(b["fuel"]["fuel_flow_kg_h"])
+ assert n["combustion"]["air_flow_kg_h"]==pytest.approx(b["combustion"]["air_flow_kg_h"])
+ assert n["combustion"]["co2_formed_kg_h"]==pytest.approx(b["combustion"]["co2_formed_kg_h"])
+ assert n["firing"]["bottom_burner_mw"]>b["firing"]["bottom_burner_mw"]
+ assert n["firing"]["sidewall_burner_mw"]<b["firing"]["sidewall_burner_mw"]
+ assert n["status"]["burner_warning"]
+
+
+def test_end_of_run_teaching_case_has_its_own_heat_demand_reference():
+ sor=dict(DEFAULT_CASE)
+ eor=dict(DEFAULT_CASE); eor["operating_case"]="end_of_run"
+ assert evaluate_case(eor)["firing"]["fired_duty_mw"]<evaluate_case(sor)["firing"]["fired_duty_mw"]
