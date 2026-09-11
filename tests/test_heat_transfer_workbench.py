@@ -131,3 +131,17 @@ def test_methane_richer_fuel_increases_thermal_stack_loss_at_same_duty():
     assert b["energy"]["fired_duty_mw"] == pytest.approx(a["energy"]["fired_duty_mw"])
     assert b["flue"]["flow_kg_h"] > a["flue"]["flow_kg_h"]
     assert b["energy"]["stack_loss_mw"] > a["energy"]["stack_loss_mw"]
+
+
+def test_fuel_component_can_drive_thermal_response_curve():
+    sweep = thermal_sweep(
+        DEFAULT_CASE,
+        DEFAULT_THERMAL_SETTINGS,
+        "H2",
+        "overall_efficiency",
+        points=31,
+    )
+    assert len(sweep["x"]) == 31
+    assert sweep["input_label"] == "Hydrogen"
+    assert sweep["input_unit"] == "%"
+    assert sweep["y"][0] != pytest.approx(sweep["y"][-1])
