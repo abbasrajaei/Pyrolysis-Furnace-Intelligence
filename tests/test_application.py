@@ -14,7 +14,7 @@ def test_dash_application_shell():
     ids=_ids(app.layout)
     required={
         "current-store","before-store","changed-store","operating-case","feed","steam-ratio",
-        "fuel-component","fuel-target","balance-component","fuel-apply","excess-air","bottom-split",
+        "fuel-component","fuel-target","balance-component","excess-air","bottom-split",
         "hold-constant","response-choice","effect-graph","results-panel","before-now",
         "status-strip","interpretation-strip","why-open","why-modal","why-content"
     }
@@ -26,7 +26,7 @@ def test_dash_http_root():
     assert b"Pyrolysis Furnace Intelligence" in response.data
 
 def test_callbacks_registered():
-    assert len(app.callback_map)>=5
+    assert len(app.callback_map)>=6
     outputs=" ".join(app.callback_map)
     assert "effect-graph" in outputs
     assert "before-now" in outputs
