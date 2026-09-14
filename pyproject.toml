@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyrolysis-furnace-intelligence"
-version = "2.2.0"
+version = "2.3.0"
 description = "Interactive furnace engineering workbench for combustion, heat transfer, pyrolysis process behaviour, firing distribution and bounded control reasoning"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
@@ -18,6 +18,8 @@ dependencies = [
 [project.optional-dependencies]
 test = ["pytest>=8,<10"]
 figures = ["matplotlib>=3.8,<4"]
+desktop = ["pywebview>=5.4,<6"]
+build = ["pyinstaller>=6,<7"]
 
 [project.scripts]
 pyrolysis-demo = "pyrolysis_furnace_intelligence.cli:main"
