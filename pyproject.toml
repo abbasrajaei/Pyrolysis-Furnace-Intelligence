@@ -20,6 +20,8 @@ test = ["pytest>=8,<10"]
 figures = ["matplotlib>=3.8,<4"]
 desktop = ["pywebview>=5.4,<6"]
 build = ["pyinstaller>=6,<7"]
+desktop = ["pywebview>=5.4,<6"]
+build = ["pyinstaller>=6,<7"]
 
 [project.scripts]
 pyrolysis-demo = "pyrolysis_furnace_intelligence.cli:main"
