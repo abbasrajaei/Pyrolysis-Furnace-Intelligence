@@ -24,7 +24,7 @@ Pyrolysis Furnace Intelligence is an independently authored educational engineer
 
 - A closed lumped furnace energy balance:
 
-\[
+$
 Q_{fired}
 =
 Q_{radiant}
@@ -34,7 +34,7 @@ Q_{convection}
 Q_{stack}
 +
 Q_{other}
-\]
+$
 
 - Stack sensible-heat loss from flue-gas mass flow, a declared effective heat capacity and stack-to-ambient temperature difference.
 - Other heat loss as a declared fraction of fired duty.
@@ -100,14 +100,14 @@ See docs/heat_transfer_methodology.md for the thermal equations and assumptions.
 
 A retained optional draft sensitivity in the legacy teaching engine uses a deliberately simple fixed-effective-resistance relation:
 
-\[
+$
 Q_{air,rel}
 =
 \sqrt{
 \frac{|P_{draft}|}
 {|P_{draft,ref}|}
 }
-\]
+$
 
 This is a **MODEL / ASSUMPTION** for teaching sensitivity only. Real furnace air admission also depends on burner/register position, density, duct and burner resistance, leakage paths and fan operating point. The current combustion cockpit therefore does not use this relation as a plant air-flow calibration.
 
