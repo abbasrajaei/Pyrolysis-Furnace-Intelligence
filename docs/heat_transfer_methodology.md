@@ -1,279 +1,144 @@
 # Heat-transfer and thermal-efficiency methodology
 
-## Purpose
+The Heat Transfer module connects the current combustion result to a lumped furnace energy balance. It follows fired duty and flue-gas flow into radiant absorption, convection recovery, stack loss and overall efficiency. The model is intended for engineering what-if studies. It is not CFD and does not calculate local flame radiation, tube-metal temperature or coking rate.
 
-The heat-transfer layer connects the combustion calculation to a simple furnace energy balance.
+## Furnace energy balance
 
-The questions are:
+The model closes the heat balance as
 
-- How much of the fired heat is absorbed in the radiant section?
-- How much is recovered in the convection section?
-- How much leaves with the stack gas?
-- What happens to overall efficiency when stack temperature or excess air changes?
-- How does radiant heat loading change average and peak heat flux?
-- How does a combustion change propagate into furnace heat recovery?
+$$
+Q_{\mathrm{fired}}=
+Q_{\mathrm{radiant}}+
+Q_{\mathrm{convection}}+
+Q_{\mathrm{stack}}+
+Q_{\mathrm{other}}
+$$
 
-The public implementation is intentionally a **lumped engineering model**. It is not CFD and it does not calculate local flame radiation or local tube-metal temperature.
+Stack sensible-heat loss is calculated from
 
-## Energy balance
+$$
+Q_{\mathrm{stack}}=
+\frac{\dot{m}_{\mathrm{fg}}\,C_{p,\mathrm{fg}}^{\mathrm{eff}}
+\left(T_{\mathrm{stack}}-T_{\mathrm{ambient}}\right)}
+{3.6\times10^6}
+$$
 
-The workbench closes the furnace balance as:
+with $\dot{m}_{\mathrm{fg}}$ in kg/h, $C_{p,\mathrm{fg}}^{\mathrm{eff}}$ in kJ/(kg·K) and $Q_{\mathrm{stack}}$ in MW. The public effective flue-gas heat capacity is
 
-$
-Q_{fired}
-=
-Q_{radiant}
-+
-Q_{convection}
-+
-Q_{stack}
-+
-Q_{other}
-$
+$$
+C_{p,\mathrm{fg}}^{\mathrm{eff}}=1.34\ \mathrm{kJ\,kg^{-1}\,K^{-1}}
+$$
 
-The combustion workbench provides the fired duty and flue-gas mass flow.
+This is a source-informed lumped value, not a composition-dependent property package.
 
-### Stack sensible-heat loss
+Other heat loss is represented as a declared fraction of fired duty:
 
-The public model calculates:
+$$
+Q_{\mathrm{other}}=f_{\mathrm{loss}}Q_{\mathrm{fired}}
+$$
 
-$
-Q_{stack}
-=
-\frac{\dot m_{fg}\,C_{p,fg}^{eff}\,(T_{stack}-T_{ambient})}{3.6\times10^6}
-$
+The public default is 1% of fired duty. Keeping this term separate from stack loss makes the effect of excess air and stack temperature visible.
 
-for:
+Useful heat and overall efficiency are then
 
-- $\dot m_{fg}$ in kg/h;
-- $C_{p,fg}^{eff}$ in kJ/kg-K;
-- temperature difference in K;
-- $Q_{stack}$ in MW.
+$$
+Q_{\mathrm{useful}}=
+Q_{\mathrm{fired}}-Q_{\mathrm{stack}}-Q_{\mathrm{other}}
+$$
 
-The public effective flue-gas heat capacity is:
-
-$
-C_{p,fg}^{eff}=1.34\;\text{kJ/kg-K}
-$
-
-This is a **source-informed lumped value**, not a composition-dependent property package. Internal source reconstruction showed that this value closes the documented normal furnace heat balance to normal engineering rounding when used with the documented stack and ambient temperatures. Exact plant reference values are not published in this repository.
-
-### Other heat loss
-
-A separate public teaching assumption accounts for casing/radiation and other unmodelled losses:
-
-$
-Q_{other}=f_{loss}\,Q_{fired}
-$
-
-The default public value is 1% of fired duty.
-
-It is intentionally separate from stack loss so that increasing excess air or stack temperature does not get hidden inside one residual term.
-
-### Useful heat and efficiency
-
-$
-Q_{useful}=Q_{fired}-Q_{stack}-Q_{other}
-$
-
-$
-\eta_{overall}
-=
-\frac{Q_{useful}}{Q_{fired}}
-$
-
-The useful heat is then divided between radiant absorption and convection recovery.
+$$
+\eta_{\mathrm{overall}}=
+\frac{Q_{\mathrm{useful}}}{Q_{\mathrm{fired}}}
+$$
 
 ## Radiant and convection split
 
-The public workbench uses a declared radiant share of fired duty:
+The public model uses a declared radiant share of fired duty:
 
-$
-Q_{radiant}=f_{radiant}\,Q_{fired}
-$
+$$
+Q_{\mathrm{radiant}}=f_{\mathrm{radiant}}Q_{\mathrm{fired}}
+$$
 
-and:
+The remaining useful heat is assigned to convection:
 
-$
-Q_{convection}=Q_{useful}-Q_{radiant}
-$
+$$
+Q_{\mathrm{convection}}=Q_{\mathrm{useful}}-Q_{\mathrm{radiant}}
+$$
 
-The radiant share is a **study input/assumption** in the public model. It is not treated as a direct plant actuator.
+The radiant share is a study assumption, not a direct plant actuator. Box efficiency is
 
-The default teaching values are slightly different for start-of-run and end-of-run so the model can represent the idea that furnace heat distribution changes with operating condition without publishing proprietary performance data.
+$$
+\eta_{\mathrm{box}}=
+\frac{Q_{\mathrm{radiant}}}{Q_{\mathrm{fired}}}
+$$
 
 ## Radiant heat flux
 
-Average radiant heat flux is calculated from:
+Average teaching heat flux is calculated from
 
-$
-q''_{avg}
-=
-\frac{Q_{radiant}}{A_{radiant}}
-$
+$$
+q''_{\mathrm{avg}}=
+\frac{Q_{\mathrm{radiant}}}{A_{\mathrm{radiant}}}
+$$
 
-The public effective radiant area is:
+using the public effective radiant area
 
-$
-A_{radiant}=420\;\text{m}^2
-$
+$$
+A_{\mathrm{radiant}}=420\ \mathrm{m^2}
+$$
 
-Peak heat flux is represented with a public teaching ratio:
+Peak teaching heat flux is estimated as
 
-$
-q''_{peak}=1.14\,q''_{avg}
-$
+$$
+q''_{\mathrm{peak}}=1.14\,q''_{\mathrm{avg}}
+$$
 
-These calculations are useful for understanding heat loading.
+These values show heat-loading sensitivity. They are not local burner-to-tube or tube-by-tube heat-flux predictions.
 
-They are **not** a local burner-to-tube radiation model and should not be interpreted as a prediction of a particular tube location.
+## Convection recovery
 
-## Convection-section recovery
-
-The convection section is represented using the following public teaching distribution of total convection duty:
-
-| Bank | Share of convection duty |
-|---|---:|
-| HTC-II | 26% |
-| HPSSH-II | 15% |
-| HPSSH-I | 16% |
-| HTC-I | 22% |
-| ECO | 12% |
-| FPH | 9% |
-
-The shares sum to 100%.
-
-They preserve the physical idea of a multi-service convection section while remaining generalised for the public portfolio.
-
-The process documentation used in developing this project describes a convection-section sequence selected to maximise heat recovery and optimise the process crossover temperature. The public workbench does not reproduce proprietary bank geometry or vendor rating calculations.
+The public model distributes total convection duty across six service groups: HTC-II 26%, HPSSH-II 15%, HPSSH-I 16%, HTC-I 22%, ECO 12% and FPH 9%. The shares sum to 100% and preserve the multi-service convection-section concept without reproducing proprietary bank geometry or vendor rating calculations.
 
 ## Coupling with combustion
 
-The heat-transfer layer uses the current result from the combustion layer rather than creating an independent furnace.
+The Heat Transfer module uses the current combustion state. At fixed stack temperature, increasing excess air increases flue-gas flow and therefore stack loss:
 
-This creates the following relationships.
-
-### Excess air
-
-$
+$$
 EA\uparrow
-\rightarrow
-\dot m_{fg}\uparrow
-\rightarrow
-Q_{stack}\uparrow
-\rightarrow
-\eta_{overall}\downarrow
-$
+\;\Rightarrow\;
+\dot{m}_{\mathrm{fg}}\uparrow
+\;\Rightarrow\;
+Q_{\mathrm{stack}}\uparrow
+\;\Rightarrow\;
+\eta_{\mathrm{overall}}\downarrow
+$$
 
-for a fixed stack temperature.
+Increasing stack temperature has the same first-order effect on stack loss:
 
-### Stack temperature
+$$
+T_{\mathrm{stack}}\uparrow
+\;\Rightarrow\;
+Q_{\mathrm{stack}}\uparrow
+\;\Rightarrow\;
+Q_{\mathrm{useful}}\downarrow
+\;\Rightarrow\;
+\eta_{\mathrm{overall}}\downarrow
+$$
 
-$
-T_{stack}\uparrow
-\rightarrow
-Q_{stack}\uparrow
-\rightarrow
-Q_{useful}\downarrow
-\rightarrow
-\eta_{overall}\downarrow
-$
+At the same heat split and geometry, higher process load increases required firing, radiant duty and average heat flux:
 
-### Feed rate
+$$
+\dot{m}_{\mathrm{feed}}\uparrow
+\;\Rightarrow\;
+Q_{\mathrm{fired}}\uparrow
+\;\Rightarrow\;
+Q_{\mathrm{radiant}}\uparrow
+\;\Rightarrow\;
+q''_{\mathrm{avg}}\uparrow
+$$
 
-The combustion layer converts process load into required firing. Therefore:
+Fuel composition can change flue-gas flow and therefore stack loss. The public thermal model uses one effective flue-gas heat capacity, so it captures this first-order mass-flow effect without claiming a full composition-dependent enthalpy calculation.
 
-$
-\dot m_{feed}\uparrow
-\rightarrow
-Q_{fired}\uparrow
-\rightarrow
-Q_{radiant}\uparrow
-\rightarrow
-q''_{avg}\uparrow
-$
+## Model boundary
 
-when the heat split and geometry are held constant.
-
-### Fuel composition
-
-Fuel composition changes the combustion-product flow.
-
-At the same fired duty and stack temperature:
-
-$
-Fuel\ composition
-\rightarrow
-\dot m_{fg}
-\rightarrow
-Q_{stack}
-\rightarrow
-\eta_{overall}
-$
-
-The public thermal model uses one effective flue-gas heat capacity, so it captures the first-order mass-flow effect but not the full composition dependence of flue-gas enthalpy.
-
-### Radiant share
-
-$
-f_{radiant}\uparrow
-\rightarrow
-Q_{radiant}\uparrow
-\rightarrow
-q''_{avg}\uparrow
-$
-
-while:
-
-$
-Q_{convection}\downarrow
-$
-
-for the same total useful heat.
-
-Changing the split alone does not create additional useful energy.
-
-## Why tube-metal temperature is not calculated
-
-The source material makes the engineering importance clear: coke retards heat transfer, tube-metal temperature rises as the coke layer grows, and tube temperature can become the operating limit.
-
-However, the public source set does not provide enough information for a defensible off-design tube-metal-temperature model. A rigorous calculation would require, among other things:
-
-- local heat flux;
-- tube geometry by location;
-- inside heat-transfer coefficient;
-- coke thickness and conductivity;
-- tube thermal conductivity;
-- local process-fluid temperature;
-- local flame/radiation field.
-
-For this reason the current heat-transfer layer calculates **heat loading**, but does not convert it into a precise tube-metal temperature or coking rate.
-
-## What the module can support
-
-The current model is appropriate for engineering what-if studies such as:
-
-- effect of stack temperature on efficiency;
-- effect of excess air on stack loss;
-- effect of feed load on fired duty and radiant flux;
-- effect of radiant/convection split on heat loading;
-- effect of fuel-composition-driven flue-gas flow on heat loss;
-- comparison of start-of-run and end-of-run teaching conditions.
-
-## What it does not claim
-
-The module does not claim to predict:
-
-- CFD velocity or temperature fields;
-- detailed flame radiation;
-- local view factors;
-- local tube heat flux;
-- tube-metal temperature;
-- detailed convection coefficients;
-- fouling resistance;
-- coking rate;
-- tube life;
-- burner-to-coil maldistribution;
-- plant-specific stack-loss guarantees.
-
-Those limitations are deliberate.
+A defensible tube-metal-temperature model would need local heat flux, tube geometry, process-side heat-transfer coefficients, tube conductivity, coke thickness and conductivity, local fluid temperature and the local radiation field. Those inputs are not available in the public model, so the workbench stops at heat loading. It does not claim CFD fields, local view factors, local tube heat flux, tube-metal temperature, detailed convection coefficients, fouling resistance, coking rate, tube life or plant-specific stack-loss guarantees.
