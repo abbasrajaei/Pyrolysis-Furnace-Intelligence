@@ -71,9 +71,10 @@ jobs:
       - name: Smoke-test packaged executable
         shell: pwsh
         run: |
-          & ".\dist\Pyrolysis-Furnace-Intelligence\Pyrolysis-Furnace-Intelligence.exe" --smoke-test
-          if ($LASTEXITCODE -ne 0) {
-            throw "Packaged desktop smoke test failed with exit code $LASTEXITCODE"
+          $exe = ".\dist\Pyrolysis-Furnace-Intelligence\Pyrolysis-Furnace-Intelligence.exe"
+          $process = Start-Process -FilePath $exe -ArgumentList "--smoke-test" -Wait -PassThru
+          if ($process.ExitCode -ne 0) {
+            throw "Packaged desktop smoke test failed with exit code $($process.ExitCode)"
           }
 
       - name: Install Inno Setup
