@@ -155,6 +155,7 @@ jobs:
 
           Export-Certificate -Cert $cert -FilePath "store-test-cert.cer" | Out-Null
           Import-Certificate -FilePath "store-test-cert.cer" -CertStoreLocation "Cert:\CurrentUser\TrustedPeople" | Out-Null
+          Import-Certificate -FilePath "store-test-cert.cer" -CertStoreLocation "Cert:\CurrentUser\Root" | Out-Null
 
           & $signtool.FullName verify /pa /v $msix
           if ($LASTEXITCODE -ne 0) {
