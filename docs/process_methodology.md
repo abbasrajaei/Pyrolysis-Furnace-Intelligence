@@ -1,248 +1,120 @@
 # Process and cracking-severity methodology
 
-## Purpose
+The Process module connects the combustion and heat-transfer results to the material flowing through the radiant coils. It uses hydrocarbon feed, dilution steam and radiant heat from the connected model, then studies coil inlet temperature, coil outlet temperature (COT), residence time, pressure drop, hydrocarbon partial pressure and a relative time-temperature severity index. The public model is a teaching model. It does not calculate rigorous cracking kinetics, product yields or coke growth.
 
-The process layer connects the combustion and heat-transfer calculations to the material flowing through the radiant coils.
+## Radiant heat split
 
-The questions are:
+A pyrolysis coil needs heat for both sensible heating and endothermic cracking. The sensible contribution is estimated as
 
-- How do feed rate and dilution steam affect residence time and pressure drop?
-- How does coil outlet temperature change time-temperature severity?
-- How much of the linked radiant heat is used for sensible heating versus the endothermic reaction?
-- Why can lower furnace throughput increase over-cracking risk if COT is not reduced?
-- Why does more dilution steam lower hydrocarbon partial pressure but also increase pressure drop and heat demand?
-- How should coking be represented without pretending to have a full coke-growth model?
+$$
+Q_{\mathrm{sensible}}=\dot{m}_{\mathrm{process}}\,C_p^{\mathrm{eff}}\left(T_{\mathrm{COT}}-T_{\mathrm{in}}\right)
+$$
 
-The public implementation is a source-informed teaching model. It does not calculate rigorous cracking kinetics or product yields.
+where
 
-## Linked process inputs
+$$
+\dot{m}_{\mathrm{process}}=\dot{m}_{\mathrm{HC}}+\dot{m}_{\mathrm{steam}}
+$$
 
-The Process module uses the same furnace state as the other workbench modules.
+and the public effective heat capacity is
 
-From Combustion it receives hydrocarbon feed rate, steam/feed ratio and required fired duty. From Heat transfer it receives radiant heat absorbed and average radiant heat flux.
+$$
+C_p^{\mathrm{eff}}=3.70\ \mathrm{kJ\,kg^{-1}\,K^{-1}}
+$$
 
-The process-only study inputs are coil inlet temperature and coil outlet temperature (COT).
+This heat capacity is a lumped teaching value for the hot reacting stream. The part of the linked radiant duty not assigned to sensible heating is reported as residual reaction heat:
 
-## Radiant sensible/reaction heat split
+$$
+Q_{\mathrm{reaction,residual}}=Q_{\mathrm{radiant}}-Q_{\mathrm{sensible}}
+$$
 
-A pyrolysis coil needs both sensible heat and reaction heat.
-
-The public model first estimates the sensible part:
-
-$
-Q_{sensible}
-=
-\dot m_{process}
-C_p^{eff}
-(T_{COT}-T_{in})
-$
-
-where:
-
-$
-\dot m_{process}
-=
-\dot m_{HC}
-+
-\dot m_{steam}
-$
-
-The public effective heat capacity is:
-
-$
-C_p^{eff}=3.70\;\text{kJ/kg-K}
-$
-
-This is a lumped teaching value chosen to represent the hot reacting process stream.
-
-The remaining linked radiant heat is displayed as:
-
-$
-Q_{reaction,residual}
-=
-Q_{radiant}
--
-Q_{sensible}
-$
-
-This quantity is deliberately called **residual reaction heat**. It is not a rigorous reaction-enthalpy calculation because composition changes continuously along the cracking coil.
-
-The purpose is to make the main physical point visible: a pyrolysis furnace does not only heat the stream. A large part of the radiant duty supports strongly endothermic cracking reactions.
+This is not a rigorous reaction-enthalpy calculation because composition changes continuously through the cracking coil. It is used to show that radiant duty supports both heating and strongly endothermic reactions.
 
 ## Coil pressure drop
 
-The selected operating case contains a generalised pressure-drop reference.
+Each public operating case has a generalised pressure-drop reference. Off-design pressure drop is estimated from
 
-The public off-design teaching relation is:
+$$
+\Delta P=\Delta P_{\mathrm{ref}}
+\left(\frac{\dot{m}_{\mathrm{process}}}{\dot{m}_{\mathrm{process,ref}}}\right)^2
+\left(\frac{T_{\mathrm{avg}}}{T_{\mathrm{avg,ref}}}\right)
+$$
 
-$
-\Delta P
-=
-\Delta P_{ref}
-\left(
-\frac{\dot m_{process}}
-{\dot m_{process,ref}}
-\right)^2
-\left(
-\frac{T_{avg}}
-{T_{avg,ref}}
-\right)
-$
-
-This captures the expected first-order direction: more feed or steam increases process flow; higher flow increases coil pressure drop; hotter gas has lower density and tends to increase pressure drop.
-
-It is not a detailed compressible pipe-flow or coke-roughness model.
-
-Start-of-run and end-of-run have separate public pressure-drop anchors so the effect of progressive furnace run condition can be represented without publishing plant-specific data.
+More feed or steam increases process flow and therefore pressure drop. At the same mass flow, a hotter gas has lower density and tends to increase pressure drop. This relation is a first-order teaching estimate, not a detailed compressible-flow or coke-roughness calculation. Start-of-run and end-of-run use separate public anchors.
 
 ## Hydrocarbon partial pressure
 
-Dilution steam is important because it reduces hydrocarbon partial pressure.
+Dilution steam lowers hydrocarbon partial pressure. The public model uses a generalised ethane-rich hydrocarbon molecular weight:
 
-The public model converts hydrocarbon and steam mass flow to molar flow using a generalised ethane-rich feed molecular weight:
+$$
+MW_{\mathrm{HC}}=30.0\ \mathrm{kg\,kmol^{-1}}
+$$
 
-$
-MW_{HC}=30.0\;\text{kg/kmol}
-$
+The hydrocarbon mole fraction is
 
-The hydrocarbon mole fraction is:
+$$
+y_{\mathrm{HC}}=
+\frac{\dot{n}_{\mathrm{HC}}}
+{\dot{n}_{\mathrm{HC}}+\dot{n}_{\mathrm{steam}}}
+$$
 
-$
-y_{HC}
-=
-\frac{\dot n_{HC}}
-{\dot n_{HC}+\dot n_{steam}}
-$
+and hydrocarbon partial pressure is estimated from
 
-and the teaching partial-pressure estimate is:
+$$
+P_{\mathrm{HC}}=y_{\mathrm{HC}}P_{\mathrm{avg}}
+$$
 
-$
-P_{HC}=y_{HC}P_{avg}
-$
-
-This allows the software to show directly that more steam lowers hydrocarbon partial pressure while the additional steam also raises total mass flow and heat demand.
+Increasing dilution steam therefore lowers hydrocarbon partial pressure while increasing total process flow and heat demand.
 
 ## Residence time
 
-The public model calibrates an effective hot-coil volume from the selected operating-case residence-time anchor.
+The model calibrates an effective hot-coil volume from the residence-time anchor of the selected public case. Total molar flow is estimated from the hydrocarbon and steam flows. The ideal-gas volumetric rate is
 
-For a given case, total molar flow is estimated from hydrocarbon and steam flow.
+$$
+\dot{V}=\frac{\dot{n}RT_{\mathrm{avg}}}{P_{\mathrm{avg}}}
+$$
 
-The ideal-gas volumetric rate is:
+and residence time is
 
-$
-\dot V
-=
-\frac{\dot nRT_{avg}}
-{P_{avg}}
-$
+$$
+\tau=\frac{V_{\mathrm{eff}}}{\dot{V}}
+$$
 
-and:
-
-$
-\tau
-=
-\frac{V_{eff}}
-{\dot V}
-$
-
-The pressure-drop estimate changes average coil pressure, so additional steam does not reduce residence time in direct proportion to the increase in molar flow. This reproduces the correct engineering idea that flow, pressure and residence time are coupled.
-
-The model is still a lumped estimate, not a one-dimensional coil simulation.
+Pressure drop changes the estimated average coil pressure, so flow, pressure and residence time remain coupled. This is a lumped estimate, not a one-dimensional coil simulation.
 
 ## Time-temperature severity
 
-Temperature and residence time are the two central variables controlling thermal cracking.
+Temperature and residence time are central to thermal cracking. The workbench therefore reports a dimensionless time-temperature index:
 
-The workbench therefore displays a dimensionless **time-temperature index**:
-
-$
-I_{TT}
-=
+$$
+I_{\mathrm{TT}}=
 100
-\left(
-\frac{\tau}{\tau_{ref}}
-\right)
-\exp
-\left[
-\beta(T_{COT}-T_{COT,ref})
-\right]
-$
+\left(\frac{\tau}{\tau_{\mathrm{ref}}}\right)
+\exp\left[\beta\left(T_{\mathrm{COT}}-T_{\mathrm{COT,ref}}\right)\right]
+$$
 
-with:
+with
 
-$
-\beta=0.018\;^\circ C^{-1}
-$
+$$
+\beta=0.018\ ^\circ\mathrm{C}^{-1}
+$$
 
-The selected public operating case is normalised to:
+The selected public operating case is normalised to
 
-$
-I_{TT}=100
-$
+$$
+I_{\mathrm{TT}}=100
+$$
 
-This is a transparent teaching indicator, not a kinetic model.
+The index shows direction rather than kinetics. Higher COT raises severity strongly, while longer residence time also raises severity. The model does not convert this index into a claimed off-design ethane conversion.
 
-It is used to show direction: higher COT increases thermal severity strongly; longer residence time increases severity; reduced feed can increase residence time and therefore severity if COT is not adjusted.
+## Conversion, coking and low load
 
-The model does **not** convert this index into a claimed ethane-conversion prediction.
+Each public operating case carries a generalised conversion anchor. When COT, feed or steam/feed changes, the software does not calculate a new exact conversion because that would require a validated kinetic mechanism and an axial temperature, pressure and composition solution.
 
-## Conversion
+Coking is treated in the same way. The workbench reports whether selected drivers move above or below the teaching reference, but it does not calculate coke thickness, coke growth rate, tube-metal temperature or remaining run length.
 
-Each public operating case carries a generalised conversion anchor.
+Below 75% of the selected normal teaching feed, the interface marks the case as low load. This is a model-validity warning, not a trip or safety limit.
 
-The interface labels it as a **case anchor**.
+## Model boundary
 
-When the user changes COT, feed rate or steam/feed ratio, the workbench does not calculate a new exact conversion. A rigorous conversion prediction would require a validated cracking kinetic mechanism and an axial temperature/pressure/composition solution.
-
-This boundary is intentional.
-
-## Coking
-
-The process source material used to develop this project shows that coking is strongly connected to time-temperature severity, hydrocarbon partial pressure, radiant heat loading, tube-wall condition, run time, dilution steam and local temperature profile.
-
-The public workbench therefore reports only a qualitative **coking-driver state** such as:
-
-- near teaching reference;
-- higher coking drivers;
-- lower coking drivers.
-
-It does not calculate coke thickness, coke growth rate, tube-metal temperature or remaining run length.
-
-## Low-load behaviour
-
-At reduced throughput residence time increases and COT normally needs to be reduced. At sufficiently low load, dilution steam also needs to increase.
-
-The public model therefore marks feed below 75% of the selected normal teaching load as a low-load range.
-
-This is not presented as a trip or safety limit. It is a model-validity warning.
-
-## What the module supports
-
-The current process layer supports what-if studies such as:
-
-- effect of COT on time-temperature severity;
-- effect of coil inlet temperature on sensible versus reaction heat split;
-- effect of feed rate on residence time and pressure drop;
-- effect of steam/feed ratio on hydrocarbon partial pressure;
-- effect of lower load on over-cracking tendency;
-- comparison of start-of-run and end-of-run process anchors;
-- propagation of combustion and heat-transfer changes into the process side.
-
-## What it does not claim
-
-The module does not predict:
-
-- detailed ethane cracking kinetics;
-- product-yield distribution;
-- exact conversion away from the case anchor;
-- local axial temperature profile;
-- local axial pressure profile;
-- coke thickness or growth rate;
-- tube-metal temperature;
-- tube life or creep;
-- run-length remaining;
-- decoke scheduling;
-- safe operating limits.
-
-Those limitations are deliberate.
+The Process module supports studies of COT, coil inlet temperature, feed, steam/feed ratio, residence time, pressure drop, hydrocarbon partial pressure and relative severity. It does not claim detailed cracking kinetics, product-yield distribution, local axial temperature or pressure profiles, coke growth, tube life, decoke scheduling or safe operating limits.
