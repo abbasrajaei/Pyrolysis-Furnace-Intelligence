@@ -29,41 +29,41 @@ A pyrolysis coil needs both sensible heat and reaction heat.
 
 The public model first estimates the sensible part:
 
-\[
+$
 Q_{sensible}
 =
 \dot m_{process}
 C_p^{eff}
 (T_{COT}-T_{in})
-\]
+$
 
 where:
 
-\[
+$
 \dot m_{process}
 =
 \dot m_{HC}
 +
 \dot m_{steam}
-\]
+$
 
 The public effective heat capacity is:
 
-\[
+$
 C_p^{eff}=3.70\;\text{kJ/kg-K}
-\]
+$
 
 This is a lumped teaching value chosen to represent the hot reacting process stream.
 
 The remaining linked radiant heat is displayed as:
 
-\[
+$
 Q_{reaction,residual}
 =
 Q_{radiant}
 -
 Q_{sensible}
-\]
+$
 
 This quantity is deliberately called **residual reaction heat**. It is not a rigorous reaction-enthalpy calculation because composition changes continuously along the cracking coil.
 
@@ -75,7 +75,7 @@ The selected operating case contains a generalised pressure-drop reference.
 
 The public off-design teaching relation is:
 
-\[
+$
 \Delta P
 =
 \Delta P_{ref}
@@ -87,7 +87,7 @@ The public off-design teaching relation is:
 \frac{T_{avg}}
 {T_{avg,ref}}
 \right)
-\]
+$
 
 This captures the expected first-order direction: more feed or steam increases process flow; higher flow increases coil pressure drop; hotter gas has lower density and tends to increase pressure drop.
 
@@ -101,24 +101,24 @@ Dilution steam is important because it reduces hydrocarbon partial pressure.
 
 The public model converts hydrocarbon and steam mass flow to molar flow using a generalised ethane-rich feed molecular weight:
 
-\[
+$
 MW_{HC}=30.0\;\text{kg/kmol}
-\]
+$
 
 The hydrocarbon mole fraction is:
 
-\[
+$
 y_{HC}
 =
 \frac{\dot n_{HC}}
 {\dot n_{HC}+\dot n_{steam}}
-\]
+$
 
 and the teaching partial-pressure estimate is:
 
-\[
+$
 P_{HC}=y_{HC}P_{avg}
-\]
+$
 
 This allows the software to show directly that more steam lowers hydrocarbon partial pressure while the additional steam also raises total mass flow and heat demand.
 
@@ -130,21 +130,21 @@ For a given case, total molar flow is estimated from hydrocarbon and steam flow.
 
 The ideal-gas volumetric rate is:
 
-\[
+$
 \dot V
 =
 \frac{\dot nRT_{avg}}
 {P_{avg}}
-\]
+$
 
 and:
 
-\[
+$
 \tau
 =
 \frac{V_{eff}}
 {\dot V}
-\]
+$
 
 The pressure-drop estimate changes average coil pressure, so additional steam does not reduce residence time in direct proportion to the increase in molar flow. This reproduces the correct engineering idea that flow, pressure and residence time are coupled.
 
@@ -156,7 +156,7 @@ Temperature and residence time are the two central variables controlling thermal
 
 The workbench therefore displays a dimensionless **time-temperature index**:
 
-\[
+$
 I_{TT}
 =
 100
@@ -167,19 +167,19 @@ I_{TT}
 \left[
 \beta(T_{COT}-T_{COT,ref})
 \right]
-\]
+$
 
 with:
 
-\[
+$
 \beta=0.018\;^\circ C^{-1}
-\]
+$
 
 The selected public operating case is normalised to:
 
-\[
+$
 I_{TT}=100
-\]
+$
 
 This is a transparent teaching indicator, not a kinetic model.
 
