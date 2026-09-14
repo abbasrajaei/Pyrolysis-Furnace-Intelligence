@@ -1,9 +1,9 @@
-$ErrorActionPreference = "Stop"
-
 param(
     [Parameter(Mandatory = $true)]
     [string]$OutputDirectory
 )
+
+$ErrorActionPreference = "Stop"
 
 Add-Type -AssemblyName System.Drawing
 
