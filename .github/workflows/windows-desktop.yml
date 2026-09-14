@@ -5,11 +5,13 @@ on:
     branches:
       - main
       - desktop-v2.3
+      - store-msix-v2.3
     paths:
       - "app/**"
       - "src/**"
       - "desktop.py"
       - "packaging/windows/**"
+      - "packaging/store/**"
       - "pyproject.toml"
       - ".github/workflows/windows-desktop.yml"
       - "LICENSE"
@@ -21,6 +23,7 @@ on:
       - "src/**"
       - "desktop.py"
       - "packaging/windows/**"
+      - "packaging/store/**"
       - "pyproject.toml"
       - ".github/workflows/windows-desktop.yml"
       - "LICENSE"
@@ -101,18 +104,109 @@ jobs:
           $version = python -c "import pyrolysis_furnace_intelligence as p; print(p.__version__)"
           "version=$version" >> $env:GITHUB_OUTPUT
 
-      - name: Generate SHA256 checksum
+      - name: Stage Microsoft Store MSIX
         shell: pwsh
         run: |
-          $installer = "installer-output\Pyrolysis-Furnace-Intelligence-Setup-v${{ steps.version.outputs.version }}.exe"
-          $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLower()
-          "$hash  $(Split-Path $installer -Leaf)" | Out-File -Encoding ascii "installer-output\SHA256SUMS.txt"
+          $stage = "msix-root"
+          Remove-Item -Recurse -Force $stage -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+
+          Copy-Item "dist\Pyrolysis-Furnace-Intelligence\*" $stage -Recurse -Force
+          Copy-Item "packaging\store\AppxManifest.xml" (Join-Path $stage "AppxManifest.xml") -Force
+          & "packaging\store\generate_msix_assets.ps1" -OutputDirectory (Join-Path $stage "Assets")
+
+      - name: Build and sign Microsoft Store MSIX
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $msix = "installer-output\Pyrolysis-Furnace-Intelligence-Store-v$version.msix"
+
+          $makeappx = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\makeappx.exe" |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if (-not $makeappx) {
+            throw "MakeAppx.exe was not found on the Windows runner"
+          }
+
+          & $makeappx.FullName pack /d "msix-root" /p $msix /o
+          if ($LASTEXITCODE -ne 0) {
+            throw "MakeAppx failed with exit code $LASTEXITCODE"
+          }
+
+          $publisher = "CN=50B235C4-1F76-43FD-A99B-D784B782FF08"
+          $cert = New-SelfSignedCertificate `
+            -Type CodeSigningCert `
+            -Subject $publisher `
+            -CertStoreLocation "Cert:\CurrentUser\My" `
+            -HashAlgorithm SHA256 `
+            -NotAfter (Get-Date).AddDays(7)
+
+          $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if (-not $signtool) {
+            throw "SignTool.exe was not found on the Windows runner"
+          }
+
+          & $signtool.FullName sign /fd SHA256 /sha1 $cert.Thumbprint $msix
+          if ($LASTEXITCODE -ne 0) {
+            throw "SignTool failed with exit code $LASTEXITCODE"
+          }
+
+          Export-Certificate -Cert $cert -FilePath "store-test-cert.cer" | Out-Null
+          Import-Certificate -FilePath "store-test-cert.cer" -CertStoreLocation "Cert:\CurrentUser\TrustedPeople" | Out-Null
+
+          & $signtool.FullName verify /pa /v $msix
+          if ($LASTEXITCODE -ne 0) {
+            throw "MSIX signature verification failed with exit code $LASTEXITCODE"
+          }
+
+      - name: Validate packaged Store payload
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $msix = "installer-output\Pyrolysis-Furnace-Intelligence-Store-v$version.msix"
+          $unpack = "msix-unpacked"
+
+          Remove-Item -Recurse -Force $unpack -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $unpack | Out-Null
+
+          $makeappx = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\makeappx.exe" |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+
+          & $makeappx.FullName unpack /p $msix /d $unpack /o
+          if ($LASTEXITCODE -ne 0) {
+            throw "MSIX unpack validation failed with exit code $LASTEXITCODE"
+          }
+
+          $exe = Join-Path $unpack "Pyrolysis-Furnace-Intelligence.exe"
+          $process = Start-Process -FilePath $exe -ArgumentList "--smoke-test" -Wait -PassThru
+          if ($process.ExitCode -ne 0) {
+            throw "MSIX payload smoke test failed with exit code $($process.ExitCode)"
+          }
+
+      - name: Generate SHA256 checksums
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $files = @(
+            "installer-output\Pyrolysis-Furnace-Intelligence-Setup-v$version.exe",
+            "installer-output\Pyrolysis-Furnace-Intelligence-Store-v$version.msix"
+          )
+
+          $lines = foreach ($file in $files) {
+            $hash = (Get-FileHash $file -Algorithm SHA256).Hash.ToLower()
+            "$hash  $(Split-Path $file -Leaf)"
+          }
+          $lines | Out-File -Encoding ascii "installer-output\SHA256SUMS.txt"
 
       - uses: actions/upload-artifact@v4
         with:
           name: Pyrolysis-Furnace-Intelligence-Windows-v${{ steps.version.outputs.version }}
           path: |
             installer-output/Pyrolysis-Furnace-Intelligence-Setup-v${{ steps.version.outputs.version }}.exe
+            installer-output/Pyrolysis-Furnace-Intelligence-Store-v${{ steps.version.outputs.version }}.msix
             installer-output/SHA256SUMS.txt
           if-no-files-found: error
 
@@ -125,15 +219,16 @@ jobs:
         run: |
           $tag = "v$env:VERSION"
           $installer = "installer-output\Pyrolysis-Furnace-Intelligence-Setup-v$env:VERSION.exe"
+          $msix = "installer-output\Pyrolysis-Furnace-Intelligence-Store-v$env:VERSION.msix"
           $checksum = "installer-output\SHA256SUMS.txt"
 
           gh release view $tag *> $null
           if ($LASTEXITCODE -ne 0) {
-            gh release create $tag $installer $checksum `
+            gh release create $tag $installer $msix $checksum `
               --target $env:GITHUB_SHA `
               --title "Pyrolysis Furnace Intelligence v$env:VERSION" `
               --notes-file "packaging\windows\RELEASE_NOTES.md"
           }
           else {
-            gh release upload $tag $installer $checksum --clobber
+            gh release upload $tag $installer $msix $checksum --clobber
           }
