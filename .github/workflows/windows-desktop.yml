@@ -1,0 +1,138 @@
+name: Windows desktop installer
+
+on:
+  push:
+    branches:
+      - main
+      - desktop-v2.3
+    paths:
+      - "app/**"
+      - "src/**"
+      - "desktop.py"
+      - "packaging/windows/**"
+      - "pyproject.toml"
+      - ".github/workflows/windows-desktop.yml"
+      - "LICENSE"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "app/**"
+      - "src/**"
+      - "desktop.py"
+      - "packaging/windows/**"
+      - "pyproject.toml"
+      - ".github/workflows/windows-desktop.yml"
+      - "LICENSE"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install project and desktop build dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ".[test,desktop,build]"
+
+      - name: Run engineering and desktop-launcher tests
+        shell: pwsh
+        run: |
+          python -m pytest -q
+          python desktop.py --smoke-test
+
+      - name: Build desktop application
+        shell: pwsh
+        run: |
+          pyinstaller desktop.py `
+            --name Pyrolysis-Furnace-Intelligence `
+            --onedir `
+            --windowed `
+            --clean `
+            --noconfirm `
+            --add-data "app/assets;app/assets" `
+            --collect-data pyrolysis_furnace_intelligence `
+            --collect-all dash `
+            --collect-all plotly `
+            --collect-all webview
+
+      - name: Smoke-test packaged executable
+        shell: pwsh
+        run: |
+          & ".\dist\Pyrolysis-Furnace-Intelligence\Pyrolysis-Furnace-Intelligence.exe" --smoke-test
+          if ($LASTEXITCODE -ne 0) {
+            throw "Packaged desktop smoke test failed with exit code $LASTEXITCODE"
+          }
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --no-progress -y
+          }
+
+      - name: Build Windows installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $iscc "packaging\windows\installer.iss"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Inno Setup failed with exit code $LASTEXITCODE"
+          }
+
+      - name: Read package version
+        id: version
+        shell: pwsh
+        run: |
+          $version = python -c "import pyrolysis_furnace_intelligence as p; print(p.__version__)"
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Generate SHA256 checksum
+        shell: pwsh
+        run: |
+          $installer = "installer-output\Pyrolysis-Furnace-Intelligence-Setup-v${{ steps.version.outputs.version }}.exe"
+          $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLower()
+          "$hash  $(Split-Path $installer -Leaf)" | Out-File -Encoding ascii "installer-output\SHA256SUMS.txt"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pyrolysis-Furnace-Intelligence-Windows-v${{ steps.version.outputs.version }}
+          path: |
+            installer-output/Pyrolysis-Furnace-Intelligence-Setup-v${{ steps.version.outputs.version }}.exe
+            installer-output/SHA256SUMS.txt
+          if-no-files-found: error
+
+      - name: Publish GitHub release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $tag = "v$env:VERSION"
+          $installer = "installer-output\Pyrolysis-Furnace-Intelligence-Setup-v$env:VERSION.exe"
+          $checksum = "installer-output\SHA256SUMS.txt"
+
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag $installer $checksum `
+              --target $env:GITHUB_SHA `
+              --title "Pyrolysis Furnace Intelligence v$env:VERSION" `
+              --notes-file "packaging\windows\RELEASE_NOTES.md"
+          }
+          else {
+            gh release upload $tag $installer $checksum --clobber
+          }
