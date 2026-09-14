@@ -19,7 +19,7 @@ The public implementation is intentionally a **lumped engineering model**. It is
 
 The workbench closes the furnace balance as:
 
-\[
+$
 Q_{fired}
 =
 Q_{radiant}
@@ -29,7 +29,7 @@ Q_{convection}
 Q_{stack}
 +
 Q_{other}
-\]
+$
 
 The combustion workbench provides the fired duty and flue-gas mass flow.
 
@@ -37,24 +37,24 @@ The combustion workbench provides the fired duty and flue-gas mass flow.
 
 The public model calculates:
 
-\[
+$
 Q_{stack}
 =
 \frac{\dot m_{fg}\,C_{p,fg}^{eff}\,(T_{stack}-T_{ambient})}{3.6\times10^6}
-\]
+$
 
 for:
 
-- \(\dot m_{fg}\) in kg/h;
-- \(C_{p,fg}^{eff}\) in kJ/kg-K;
+- $\dot m_{fg}$ in kg/h;
+- $C_{p,fg}^{eff}$ in kJ/kg-K;
 - temperature difference in K;
-- \(Q_{stack}\) in MW.
+- $Q_{stack}$ in MW.
 
 The public effective flue-gas heat capacity is:
 
-\[
+$
 C_{p,fg}^{eff}=1.34\;\text{kJ/kg-K}
-\]
+$
 
 This is a **source-informed lumped value**, not a composition-dependent property package. Internal source reconstruction showed that this value closes the documented normal furnace heat balance to normal engineering rounding when used with the documented stack and ambient temperatures. Exact plant reference values are not published in this repository.
 
@@ -62,9 +62,9 @@ This is a **source-informed lumped value**, not a composition-dependent property
 
 A separate public teaching assumption accounts for casing/radiation and other unmodelled losses:
 
-\[
+$
 Q_{other}=f_{loss}\,Q_{fired}
-\]
+$
 
 The default public value is 1% of fired duty.
 
@@ -72,15 +72,15 @@ It is intentionally separate from stack loss so that increasing excess air or st
 
 ### Useful heat and efficiency
 
-\[
+$
 Q_{useful}=Q_{fired}-Q_{stack}-Q_{other}
-\]
+$
 
-\[
+$
 \eta_{overall}
 =
 \frac{Q_{useful}}{Q_{fired}}
-\]
+$
 
 The useful heat is then divided between radiant absorption and convection recovery.
 
@@ -88,15 +88,15 @@ The useful heat is then divided between radiant absorption and convection recove
 
 The public workbench uses a declared radiant share of fired duty:
 
-\[
+$
 Q_{radiant}=f_{radiant}\,Q_{fired}
-\]
+$
 
 and:
 
-\[
+$
 Q_{convection}=Q_{useful}-Q_{radiant}
-\]
+$
 
 The radiant share is a **study input/assumption** in the public model. It is not treated as a direct plant actuator.
 
@@ -106,23 +106,23 @@ The default teaching values are slightly different for start-of-run and end-of-r
 
 Average radiant heat flux is calculated from:
 
-\[
+$
 q''_{avg}
 =
 \frac{Q_{radiant}}{A_{radiant}}
-\]
+$
 
 The public effective radiant area is:
 
-\[
+$
 A_{radiant}=420\;\text{m}^2
-\]
+$
 
 Peak heat flux is represented with a public teaching ratio:
 
-\[
+$
 q''_{peak}=1.14\,q''_{avg}
-\]
+$
 
 These calculations are useful for understanding heat loading.
 
@@ -155,7 +155,7 @@ This creates the following relationships.
 
 ### Excess air
 
-\[
+$
 EA\uparrow
 \rightarrow
 \dot m_{fg}\uparrow
@@ -163,13 +163,13 @@ EA\uparrow
 Q_{stack}\uparrow
 \rightarrow
 \eta_{overall}\downarrow
-\]
+$
 
 for a fixed stack temperature.
 
 ### Stack temperature
 
-\[
+$
 T_{stack}\uparrow
 \rightarrow
 Q_{stack}\uparrow
@@ -177,13 +177,13 @@ Q_{stack}\uparrow
 Q_{useful}\downarrow
 \rightarrow
 \eta_{overall}\downarrow
-\]
+$
 
 ### Feed rate
 
 The combustion layer converts process load into required firing. Therefore:
 
-\[
+$
 \dot m_{feed}\uparrow
 \rightarrow
 Q_{fired}\uparrow
@@ -191,7 +191,7 @@ Q_{fired}\uparrow
 Q_{radiant}\uparrow
 \rightarrow
 q''_{avg}\uparrow
-\]
+$
 
 when the heat split and geometry are held constant.
 
@@ -201,7 +201,7 @@ Fuel composition changes the combustion-product flow.
 
 At the same fired duty and stack temperature:
 
-\[
+$
 Fuel\ composition
 \rightarrow
 \dot m_{fg}
@@ -209,25 +209,25 @@ Fuel\ composition
 Q_{stack}
 \rightarrow
 \eta_{overall}
-\]
+$
 
 The public thermal model uses one effective flue-gas heat capacity, so it captures the first-order mass-flow effect but not the full composition dependence of flue-gas enthalpy.
 
 ### Radiant share
 
-\[
+$
 f_{radiant}\uparrow
 \rightarrow
 Q_{radiant}\uparrow
 \rightarrow
 q''_{avg}\uparrow
-\]
+$
 
 while:
 
-\[
+$
 Q_{convection}\downarrow
-\]
+$
 
 for the same total useful heat.
 
