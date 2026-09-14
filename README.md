@@ -692,6 +692,22 @@ The public CI also checks that the Dash application loads successfully.
 
 ---
 
+## Windows desktop installer
+
+For Windows users, the easiest way to run the workbench is the packaged desktop installer. No separate Python installation is required.
+
+Download the latest installer from the [GitHub Releases page](https://github.com/abbasrajaei/Pyrolysis-Furnace-Intelligence/releases/latest):
+
+`Pyrolysis-Furnace-Intelligence-Setup-v2.3.0.exe`
+
+After installation, open **Pyrolysis Furnace Intelligence** from the Start Menu. The installer can also create an optional desktop shortcut.
+
+The desktop application runs the same public engineering model locally on the computer and displays it in its own application window. It does not connect to a plant or external control system.
+
+> **Windows note:** code signing is not yet configured, so Windows SmartScreen may show an **Unknown publisher** warning. The installer is built automatically from this public repository by GitHub Actions, and each release includes a SHA256 checksum.
+
+---
+
 ## Run locally
 
 Python 3.12 is the tested CI runtime.
@@ -740,6 +756,8 @@ http://127.0.0.1:8050
 
 ~~~text
 app/        Dash furnace engineering workbench and interface styling
+desktop.py  Windows desktop launcher
+packaging/  Windows installer and release packaging
 src/        Combustion, heat-transfer, furnace and supporting engineering calculations
 data/       Public teaching inputs
 tests/      Engineering and application tests

@@ -5,6 +5,6 @@ type: software
 authors:
   - family-names: Rajaei
     given-names: Abbas
-version: 2.2.0
+version: 2.3.0
 license: MIT
 abstract: "Interactive furnace engineering workbench connecting combustion, heat transfer, pyrolysis process behaviour, firing distribution and bounded control reasoning studies."
