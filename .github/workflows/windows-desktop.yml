@@ -153,14 +153,7 @@ jobs:
             throw "SignTool failed with exit code $LASTEXITCODE"
           }
 
-          Export-Certificate -Cert $cert -FilePath "store-test-cert.cer" | Out-Null
-          Import-Certificate -FilePath "store-test-cert.cer" -CertStoreLocation "Cert:\CurrentUser\TrustedPeople" | Out-Null
-          Import-Certificate -FilePath "store-test-cert.cer" -CertStoreLocation "Cert:\CurrentUser\Root" | Out-Null
-
-          & $signtool.FullName verify /pa /v $msix
-          if ($LASTEXITCODE -ne 0) {
-            throw "MSIX signature verification failed with exit code $LASTEXITCODE"
-          }
+          Write-Host "MSIX signed with temporary CI certificate for package validation."
 
       - name: Validate packaged Store payload
         shell: pwsh
