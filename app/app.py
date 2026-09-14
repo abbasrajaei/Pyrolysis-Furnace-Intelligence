@@ -44,7 +44,7 @@ from app.process_page import (
     register_process_callbacks,
 )
 
-app = Dash(__name__, title="Pyrolysis Furnace Intelligence", suppress_callback_exceptions=True)
+app = Dash(\n    __name__,\n    title="Pyrolysis Furnace Intelligence",\n    suppress_callback_exceptions=True,\n    assets_folder=str(ROOT / "app" / "assets"),\n)
 server = app.server
 
 C = {
