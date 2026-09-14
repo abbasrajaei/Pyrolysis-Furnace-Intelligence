@@ -45,10 +45,10 @@ class LocalApplicationServer:
         raise RuntimeError("Local application server did not become ready") from last_error
 
     def shutdown(self) -> None:
-        self._httpd.shutdown()
-        self._httpd.server_close()
         if self._thread.is_alive():
+            self._httpd.shutdown()
             self._thread.join(timeout=3.0)
+        self._httpd.server_close()
 
 
 def smoke_test() -> int:
