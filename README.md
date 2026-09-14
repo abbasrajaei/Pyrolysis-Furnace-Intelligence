@@ -692,6 +692,13 @@ The public CI also checks that the Dash application loads successfully.
 
 ---
 
+
+## Privacy
+
+Pyrolysis Furnace Intelligence is designed to run locally and does not intentionally collect, transmit, sell, or share personal information. See the full [Privacy Policy](PRIVACY.md).
+
+---
+
 ## Windows desktop installer
 
 For Windows users, the easiest way to run the workbench is the packaged desktop installer. No separate Python installation is required.
