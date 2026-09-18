@@ -58,7 +58,9 @@ Automated tests check software behaviour and physical direction, including mixtu
 
 ## Windows desktop
 
-For Windows users, download the latest desktop build from [GitHub Releases](https://github.com/abbasrajaei/Pyrolysis-Furnace-Intelligence/releases/latest). The packaged application runs locally and does not require a separate Python installation. The direct EXE installer is currently unsigned and may trigger a Windows SmartScreen warning. The repository also contains the MSIX prepared for Microsoft Store distribution.
+**[Install Pyrolysis Furnace Intelligence from the Microsoft Store](https://apps.microsoft.com/detail/9NB6K57T831H?hl=en-us&gl=GB)**
+
+The Microsoft Store version is the recommended Windows installation route. It installs the packaged desktop application directly and does not require a separate Python installation. A direct EXE installer is also available from [GitHub Releases](https://github.com/abbasrajaei/Pyrolysis-Furnace-Intelligence/releases/latest), although the direct installer is unsigned and may trigger a Windows SmartScreen warning.
 
 To run from source with the tested Python 3.12 environment:
 
