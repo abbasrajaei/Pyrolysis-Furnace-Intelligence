@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="650" viewBox="0 0 1120 650" role="img">
+<title>CONCEPTUAL INDUSTRIAL PYROLYSIS FURNACE — NOT TO SCALE</title>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#21758a"/></marker></defs>
+<rect width="1120" height="650" fill="#f3f7f9"/>
+<text x="35" y="40" font-family="sans-serif" font-size="23" fill="#173443">CONCEPTUAL INDUSTRIAL PYROLYSIS FURNACE — NOT TO SCALE</text>
+<line x1="225" y1="120" x2="280" y2="120" stroke="#21758a" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="485" y1="120" x2="550" y2="120" stroke="#21758a" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="785" y1="120" x2="850" y2="120" stroke="#21758a" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="965" y1="170" x2="965" y2="235" stroke="#21758a" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="225" y1="365" x2="280" y2="365" stroke="#21758a" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="485" y1="365" x2="550" y2="280" stroke="#21758a" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="665" y1="170" x2="665" y2="245" stroke="#21758a" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="665" y1="310" x2="665" y2="330" stroke="#21758a" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="665" y1="500" x2="665" y2="515" stroke="#21758a" stroke-width="3" marker-end="url(#arrow)"/><rect x="510" y="330" width="310" height="170" rx="8" fill="none" stroke="#aac4cf" stroke-width="2"/><rect x="35" y="90" width="190" height="65" rx="8" fill="white" stroke="#aac4cf" stroke-width="2"/>
+<text x="130.0" y="114" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Fuel demand</text>
+<text x="130.0" y="136" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">and distribution</text>
+<rect x="280" y="80" width="205" height="90" rx="8" fill="white" stroke="#aac4cf" stroke-width="2"/>
+<text x="382.5" y="104" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Bottom burners</text>
+<text x="382.5" y="126" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Sidewall burners</text>
+<text x="382.5" y="148" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Outlet firing</text>
+<rect x="550" y="80" width="235" height="90" rx="8" fill="white" stroke="#aac4cf" stroke-width="2"/>
+<text x="667.5" y="104" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Radiant box</text>
+<text x="667.5" y="126" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Heat release + transfer</text>
+<rect x="850" y="80" width="230" height="90" rx="8" fill="white" stroke="#aac4cf" stroke-width="2"/>
+<text x="965.0" y="104" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Convection section</text>
+<text x="965.0" y="126" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Heat recovery</text>
+<rect x="850" y="235" width="230" height="70" rx="8" fill="white" stroke="#aac4cf" stroke-width="2"/>
+<text x="965.0" y="259" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">ID fan / stack</text>
+<text x="965.0" y="281" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Flue-gas removal</text>
+<rect x="35" y="330" width="190" height="70" rx="8" fill="white" stroke="#aac4cf" stroke-width="2"/>
+<text x="130.0" y="354" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Feed + steam</text>
+<text x="130.0" y="376" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Two process passes</text>
+<rect x="280" y="330" width="205" height="70" rx="8" fill="white" stroke="#aac4cf" stroke-width="2"/>
+<text x="382.5" y="354" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Convection preheat</text>
+<text x="382.5" y="376" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Process-side path</text>
+<rect x="550" y="245" width="235" height="65" rx="8" fill="white" stroke="#aac4cf" stroke-width="2"/>
+<text x="667.5" y="269" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Radiant coils</text>
+<text x="667.5" y="291" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Illustrative inlet zones</text>
+<rect x="525" y="350" width="80" height="55" rx="8" fill="white" stroke="#aac4cf" stroke-width="2"/>
+<text x="565.0" y="374" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">A</text>
+<rect x="625" y="350" width="80" height="55" rx="8" fill="white" stroke="#aac4cf" stroke-width="2"/>
+<text x="665.0" y="374" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">B</text>
+<rect x="725" y="350" width="80" height="55" rx="8" fill="white" stroke="#aac4cf" stroke-width="2"/>
+<text x="765.0" y="374" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">C</text>
+<rect x="525" y="430" width="80" height="55" rx="8" fill="white" stroke="#aac4cf" stroke-width="2"/>
+<text x="565.0" y="454" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">D</text>
+<rect x="625" y="430" width="80" height="55" rx="8" fill="white" stroke="#aac4cf" stroke-width="2"/>
+<text x="665.0" y="454" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">E</text>
+<rect x="725" y="430" width="80" height="55" rx="8" fill="white" stroke="#aac4cf" stroke-width="2"/>
+<text x="765.0" y="454" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">F</text>
+<rect x="535" y="515" width="260" height="65" rx="8" fill="white" stroke="#aac4cf" stroke-width="2"/>
+<text x="665.0" y="539" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Process outlet</text>
+<text x="665.0" y="561" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#173443">Pass 1: A–C / Pass 2: D–F</text>
+<text x="35" y="620" font-family="sans-serif" font-size="15" fill="#425b68">Flow and functional grouping only. Zone boxes do not represent coil geometry, burner positions or piping.</text></svg>

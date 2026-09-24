@@ -1,0 +1,51 @@
+{
+  "heat_balance": {
+    "input_MW": 60,
+    "radiant_MW": 27.0,
+    "convection_MW": 28.0,
+    "residual_MW": 5.0
+  },
+  "fuel_comparison": {
+    "fuels": [
+      "baseline",
+      "high_mass_lhv",
+      "lower_mass_lhv"
+    ],
+    "lhv_MJ_kg": [
+      52.121212121212125,
+      73.33333333333333,
+      48.04347826086956
+    ],
+    "equivalent_mass_kg_s": [
+      1.1511627906976742,
+      0.8181818181818182,
+      1.248868778280543
+    ]
+  },
+  "zone_redistribution": {
+    "before_W": [
+      6000000.0,
+      6000000.0,
+      6000000.0,
+      6000000.0,
+      6000000.0,
+      6000000.0
+    ],
+    "after_W": [
+      5783999.999999999,
+      5783999.999999999,
+      7080000.0,
+      5783999.999999999,
+      5783999.999999999,
+      5783999.999999999
+    ],
+    "inlet_total_W": 36000000.0
+  },
+  "control_authority_example": {
+    "normal_authority": "fuel_demand_control",
+    "constraint_authority": "low_pressure_constraint"
+  },
+  "scenario_reasoning": {
+    "basis": "Public grounding and validator architecture; no model-performance data"
+  }
+}
