@@ -14,6 +14,18 @@ The application connects fuel composition and firing conditions with fuel proper
 
 The public model uses generalised engineering conditions and is intended for engineering study, sensitivity analysis and learning. It is not a plant digital twin, CFD package, BMS, APC, safety system or plant-authoritative operating tool.
 
+## Application views
+
+<p align="center">
+  <img src="assets/app-combustion-workbench.jpg" width="76%" alt="Combustion workbench showing fuel-composition sensitivity">
+</p>
+<p align="center"><em>Combustion workbench: fuel-composition sensitivity.</em></p>
+
+<p align="center">
+  <img src="assets/app-heat-transfer-workbench.jpg" width="76%" alt="Heat-transfer workbench showing furnace heat balance and efficiency">
+</p>
+<p align="center"><em>Heat-transfer workbench: furnace heat balance and efficiency.</em></p>
+
 ## Windows application
 
 **[Install Pyrolysis Furnace Intelligence from the Microsoft Store](https://apps.microsoft.com/detail/9NB6K57T831H?hl=en-us&gl=GB)**
