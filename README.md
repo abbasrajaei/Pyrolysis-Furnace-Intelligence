@@ -1,5 +1,7 @@
 # Pyrolysis Furnace Intelligence
 
+*A reduced-order engineering workbench for combustion, heat transfer, and process response in steam-cracking furnaces*
+
 **Pyrolysis Furnace Intelligence** is a reduced-order engineering model and Windows desktop application for studying the coupled behaviour of an industrial steam-cracking furnace.
 
 The model connects:
