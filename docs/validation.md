@@ -1,12 +1,12 @@
 # Public validation
 
-The public CI suite runs on Python 3.12 and currently reports **279 passed, 0 failed**. It also runs the public example scripts, CLI example and Dash HTTP-root smoke test.
+The public CI suite runs on Python 3.12 and reported **291 passed, 0 failed** on 21 November 2026. It also runs the public example scripts, CLI example and Dash HTTP-root smoke test.
 
-The validation suite now covers the connected Combustion and Heat Transfer workbenches as well as the retained educational firing/control modules.
+The validation suite covers the connected Combustion, Heat Transfer and Process workbenches as well as the retained educational firing/control modules.
 
 | Coverage | Check |
 |---|---|
-| Installation/imports | Package metadata, version 2.1.0, public modules and packaged resource copies |
+| Installation/imports | Package metadata, version 2.3.0, public modules and packaged resource copies |
 | Fuel composition | Composition closure, balance-component behaviour and supported fuel species |
 | Combustion chemistry | Stoichiometric oxygen, humid combustion air, wet/dry products and physical product checks |
 | Fuel properties | Molecular weight, mass LHV, volumetric LHV, lower Wobbe Index and fuel-flow response |
@@ -21,6 +21,7 @@ The validation suite now covers the connected Combustion and Heat Transfer workb
 | Convection recovery | Public bank shares close exactly to total convection duty |
 | Cross-module coupling | Feed, excess air and fuel-composition changes propagate from combustion into the thermal calculation |
 | Cross-module hold basis | Constant-duty / constant-fuel-flow fuel-study basis is preserved in the Heat Transfer module |
+| Process response | Sensible and residual heat, coil pressure drop, dilution-steam partial pressure, residence time and relative cracking-severity index |
 | Module navigation | Combustion and Heat Transfer pages and their module-specific controls/callbacks are registered |
 | Firing/control teaching modules | Firing conservation, temperature selection, pressure authority and static scenario behaviour |
 | Guidance/supervisor | Deterministic guidance and bounded supervisor contract |
