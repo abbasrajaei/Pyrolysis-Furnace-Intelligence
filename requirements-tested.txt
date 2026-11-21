@@ -1,0 +1,6 @@
+# Validated dependency ranges for the public workbench.
+PyYAML>=6,<7
+dash>=3.2,<4
+plotly>=6,<7
+gunicorn>=23,<24
+pytest>=8,<10

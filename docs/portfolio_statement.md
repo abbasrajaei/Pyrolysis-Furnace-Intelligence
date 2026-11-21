@@ -1,7 +1,9 @@
 # Portfolio statement
 
-**Pyrolysis Furnace Intelligence** is a reduced-order engineering model and Windows desktop application developed to connect combustion, furnace heat transfer and pyrolysis process response in one engineering framework.
+Developed **Pyrolysis Furnace Intelligence 2.1**, an interactive furnace engineering workbench that connects combustion calculations with furnace heat transfer and thermal efficiency.
 
-The project translates industrial furnace behaviour into a computational model that follows changes in fuel and operating conditions through combustion calculations, furnace energy distribution and process-side response.
+The public application calculates fuel-mixture molecular weight, LHV, Wobbe Index, stoichiometric/actual air, flue-gas composition and CO2 production, then carries fired duty and flue-gas flow into a closed thermal balance covering radiant absorption, convection recovery, stack sensible-heat loss, overall/box efficiency and teaching radiant heat flux.
 
-The public repository is documentation-only. Source code and implementation files are not publicly distributed. The Windows application remains available through the Microsoft Store.
+The horizontal Dash interface is built around engineering what-if studies: change a parameter, see the recalculated square-point response curve, compare Before → Now, and open a second layer explaining why the result changed.
+
+The repository also retains bounded educational firing/control modules. Public numerical cases are synthetic or generalised, proprietary plant documents are not distributed, and the project makes no plant-validation, CFD, tube-life, safety-system or autonomous-control claim.
