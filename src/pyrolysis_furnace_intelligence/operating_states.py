@@ -1,0 +1,5 @@
+from enum import Enum
+class State(str,Enum):
+    NORMAL='NORMAL'
+    PARTIAL='PARTIAL_SHUTDOWN_TEACHING'
+    TOTAL='TOTAL_SHUTDOWN_TEACHING'

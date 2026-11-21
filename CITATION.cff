@@ -1,9 +1,10 @@
 cff-version: 1.2.0
-message: "Please cite this software when referring to the Pyrolysis Furnace Intelligence project."
+message: "Please cite this educational software when reusing its methods or teaching examples."
 title: "Pyrolysis Furnace Intelligence"
 type: software
 authors:
   - family-names: Rajaei
     given-names: Abbas
 version: 2.3.0
-abstract: "Reduced-order furnace engineering workbench connecting combustion, heat transfer and pyrolysis process response."
+license: MIT
+abstract: "Interactive furnace engineering workbench connecting combustion, heat transfer, pyrolysis process behaviour, firing distribution and bounded control reasoning studies."
