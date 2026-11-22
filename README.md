@@ -2,7 +2,6 @@
 
 **Pyrolysis Furnace Intelligence** is an interactive engineering workbench for steam-cracking furnaces. It combines combustion, furnace heat transfer and process-side pyrolysis indicators in a connected mathematical model for engineering what-if studies.
 
-**Model boundary:** This is a public, reduced-order engineering study, not a plant digital twin, CFD simulation, advanced process controller, burner management system or safety tool. Public cases use generalised or synthetic inputs.
 
 ## Screenshots
 
@@ -18,7 +17,7 @@ I developed a **physics-based mathematical modelling project** that links change
 
 **Fuel composition → combustion and fired duty → furnace energy balance → process-side response.**
 
-The application also provides baseline-versus-modified case comparisons, sensitivity curves and bounded engineering explanations. The contribution is the integrated model formulation and its implementation, **not** a claim to have invented a new mathematical theory.
+The application also provides baseline-versus-modified case comparisons, sensitivity curves and bounded engineering explanations. 
 
 ## Computational framework
 
@@ -31,7 +30,7 @@ The application uses a **coupled, deterministic, steady-state, reduced-order com
 | **Process** | Sensible heating, residual reaction-duty estimate, coil pressure drop, hydrocarbon partial pressure, residence time and relative time-temperature cracking severity |
 | **Sensitivity studies** | Repeated recalculation of supported inputs, one variable at a time, with a consistent model state and Before → Now comparisons |
 
-The current combustion result supplies fired duty and flue-gas flow to the heat-transfer model. The process model then uses the current feed and steam conditions with the calculated radiant duty. This is **sequential steady-state coupling**, not a transient simulation.
+The current combustion result supplies fired duty and flue-gas flow to the heat-transfer model. The process model then uses the current feed and steam conditions with the calculated radiant duty. 
 
 ## Mathematical methodology implemented
 
@@ -75,13 +74,13 @@ $$
 I_{\mathrm{TT}}=100\left(\frac{\tau}{\tau_{\mathrm{ref}}}\right)\exp\left[\beta(T_{\mathrm{COT}}-T_{\mathrm{COT,ref}})\right]
 $$
 
-The public implementation uses \(\beta=0.018\ ^\circ\mathrm{C}^{-1}\). The index is **not a validated kinetic rate law** and does not calculate off-design conversion or product yields.
+The implementation uses \(\beta=0.018\ ^\circ\mathrm{C}^{-1}\). 
 
 ### Deterministic sensitivity analysis
 
 The numerical engine varies one supported input over a defined range and recalculates the connected state for each point. Fuel-component studies rebalance the composition to preserve mole-fraction closure. The retained educational firing-distribution module also preserves total firing during zone-share changes.
 
-These are **parametric studies**, not numerical optimisation with a constrained objective function.
+These are **parametric studies**.
 
 ## Programming and numerical tools
 
@@ -95,15 +94,10 @@ These are **parametric studies**, not numerical optimisation with a constrained 
 | Software tests | **pytest** |
 | Packaging and continuous integration | **pyproject.toml**, GitHub Actions (Python 3.12) |
 
-The public numerical model does not use CFD, machine learning, dynamic ODE integration or a formal nonlinear optimisation solver.
 
 ## Scope and validation
 
 Supported calculations include complete-combustion accounting for declared fuel species, a closed furnace heat balance and reduced-order process indicators. The public test suite checks composition closure, physical balance consistency, expected response directions and cross-module coupling.
-
-**Not claimed:** plant-calibrated predictions; detailed flame shape or NOx/CO emissions; tube-metal temperature, local heat flux or tube life; detailed cracking yields or coke-growth rates; PID dynamics or APC/BMS functionality; autonomous control or safe-to-operate decisions.
-
-Passing automated tests confirms consistency with the stated equations and assumptions. It does **not** establish accuracy against a real operating furnace.
 
 Further detail: [Technical methodology](docs/methodology.md) · [Heat-transfer methodology](docs/heat_transfer_methodology.md) · [Process methodology](docs/process_methodology.md) · [Model boundaries](docs/model_boundaries.md) · [Public validation](docs/validation.md) · [Reproducibility](docs/reproducibility.md)
 
@@ -141,6 +135,6 @@ Open http://127.0.0.1:8050.
 
 **Abbas Rajaei — Chemical / Process Engineer**
 
-This project forms part of my continuing work on industrial combustion, furnace optimisation and energy efficiency. It is intended to demonstrate inspectable engineering reasoning using publicly shareable model inputs.
+This project forms part of my continuing work on industrial combustion, furnace optimisation and energy efficiency.
 
 The desktop workbench is designed to run locally and does not intentionally collect or transmit personal data. See [Privacy Policy](PRIVACY.md).
